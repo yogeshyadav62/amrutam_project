@@ -1,43 +1,54 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
+# Dependencies
 node_modules/
+**/node_modules/
 
-# Expo
-.expo/
+# Secrets & Service Accounts
+*firebase-adminsdk*.json
+**/ *firebase-adminsdk*.json
+firebase-service-account.json
+**/firebase-service-account.json
+
+# Build & Expo outputs
 dist/
-web-build/
-expo-env.d.ts
+**/dist/
+build/
+**/build/
+.expo/
+**/.expo/
+.next/
+**/.next/
+out/
+**/out/
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
+# Android build & Gradle caches
+.gradle/
+**/.gradle/
+android/.gradle/
+**/android/.gradle/
+android/app/build/
+**/android/app/build/
+android/build/
+**/android/build/
+*.apk
+*.aab
 
-# Metro
-.metro-health-check*
+# Environment variables & secrets
+.env
+**/ .env
+.env.local
+.env.*.local
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# macOS
+# OS & IDE files
 .DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
-
-example
-
-# generated native folders
-/ios
-/android
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

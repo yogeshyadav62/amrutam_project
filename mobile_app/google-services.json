@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "226213142825",
+    "project_id": "amrutam-8fbc6",
+    "storage_bucket": "amrutam-8fbc6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:226213142825:android:31c2030d0d79f681101738",
+        "android_client_info": {
+          "package_name": "com.amrutam.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAT72x-KCaCJEPuZvRP7M2Non4_3pVP_bk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

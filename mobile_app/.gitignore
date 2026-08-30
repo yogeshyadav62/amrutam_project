@@ -1,0 +1,17 @@
+node_modules/
+.expo/
+dist/
+build/
+*firebase-adminsdk*.json
+firebase-service-account.json
+android/.gradle/
+android/app/build/
+android/build/
+*.apk
+*.aab
+.env
+.env.local
+*.log
+npm-debug.log*
+yarn-debug.log*
+.DS_Store
