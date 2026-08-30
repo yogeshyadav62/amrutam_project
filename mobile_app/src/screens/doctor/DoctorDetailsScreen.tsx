@@ -19,6 +19,7 @@ import { addBooking, addOfflineBooking } from '@/redux/slices/bookingSlice';
 import { useToast } from '@/components/common/Toast';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { triggerBookingNotification } from '@/services/notificationService';
+import { Storage } from '@/services/storageService';
 import { ArrowLeft, User, Building, CheckCircle, AlertCircle } from 'lucide-react-native';
 
 export function DoctorDetailsScreen() {
@@ -47,7 +48,7 @@ export function DoctorDetailsScreen() {
 
     async function loadDoctorProfile() {
       if (!id) return;
-      setIsLoadingDoctor(true);
+      if (!doctor) setIsLoadingDoctor(true);
 
       try {
         const res = await axios.get(API_ROUTES.DOCTOR_BY_ID(id), { timeout: 5000 });
@@ -55,7 +56,12 @@ export function DoctorDetailsScreen() {
           setDoctor(res.data.data);
         }
       } catch (err) {
-        console.warn('API fetch error for Doctor details:', err);
+        console.warn('API fetch error for Doctor details (using offline cache):', err);
+        const cachedDoctors = Storage.getItem<Doctor[]>('amrutam_cached_doctors', []) || [];
+        const found = cachedDoctors.find((d: Doctor) => String(d.id) === String(id) || String((d as any)._id) === String(id));
+        if (isMounted && found) {
+          setDoctor(found);
+        }
       } finally {
         if (isMounted) {
           setIsLoadingDoctor(false);
@@ -90,7 +96,19 @@ export function DoctorDetailsScreen() {
           setSlots(Array.isArray(res.data.data) ? res.data.data : []);
         }
       } catch (err) {
-        console.warn('API fetch error for Doctor slots:', err);
+        console.warn('API fetch error for Doctor slots (using offline slots):', err);
+        if (isMounted) {
+          const defaultTimes = ['09:00 AM', '10:30 AM', '11:45 AM', '02:00 PM', '04:30 PM', '06:00 PM'];
+          setSlots(
+            defaultTimes.map((t, idx) => ({
+              id: `${id}_${selectedDate}_${idx}`,
+              time: t,
+              date: selectedDate,
+              isBooked: false,
+              isExpired: false,
+            }))
+          );
+        }
       } finally {
         if (isMounted) {
           setIsLoadingSlots(false);

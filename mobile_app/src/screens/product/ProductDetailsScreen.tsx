@@ -63,7 +63,12 @@ export function ProductDetailsScreen() {
           setProduct(res.data.data);
         }
       } catch (err) {
-        console.warn('API fetch error for Product details:', err);
+        console.warn('API fetch error for Product details (using offline cache):', err);
+        if (isMounted && !product) {
+          const cached = Storage.getItem<Product[]>('amrutam_persistent_products', []) || [];
+          const found = cached.find((p) => String(p.id) === String(id) || String((p as any)._id) === String(id));
+          if (found) setProduct(found);
+        }
       } finally {
         if (isMounted) {
           setIsLoading(false);
