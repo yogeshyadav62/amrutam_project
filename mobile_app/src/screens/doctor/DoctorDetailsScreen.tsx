@@ -99,14 +99,27 @@ export function DoctorDetailsScreen() {
         console.warn('API fetch error for Doctor slots (using offline slots):', err);
         if (isMounted) {
           const defaultTimes = ['09:00 AM', '10:30 AM', '11:45 AM', '02:00 PM', '04:30 PM', '06:00 PM'];
+          // Match local offline bookings for this user & doctor
+          const userLocalBookings = bookings.filter(
+            (b) =>
+              b &&
+              (b.doctorId === id || (doctor as any)?._id === b.doctorId) &&
+              b.slotDate === selectedDate &&
+              b.status !== 'Cancelled'
+          );
+          const localBookedTimes = new Set(userLocalBookings.map((b) => (b.slotTime || '').trim()));
+
           setSlots(
-            defaultTimes.map((t, idx) => ({
-              id: `${id}_${selectedDate}_${idx}`,
-              time: t,
-              date: selectedDate,
-              isBooked: false,
-              isExpired: false,
-            }))
+            defaultTimes.map((t, idx) => {
+              const cleanT = t.trim();
+              return {
+                id: `${id}_${selectedDate}_${idx}`,
+                time: cleanT,
+                date: selectedDate,
+                isBooked: localBookedTimes.has(cleanT),
+                isExpired: false,
+              };
+            })
           );
         }
       } finally {
