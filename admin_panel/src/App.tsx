@@ -12,7 +12,7 @@ import { NotificationsPage } from './pages/notifications/NotificationsPage';
 import { AdminLoginPage } from './pages/auth/AdminLoginPage';
 import { DoctorDashboardPage } from './pages/doctors/DoctorDashboardPage';
 import { DoctorBookingsPage } from './pages/doctors/DoctorBookingsPage';
-import { NAV_ROUTES } from './utils/Routes';
+import { NAV_ROUTES, BASE_URL } from './utils/Routes';
 import type { AuthUser } from './types';
 import { io } from 'socket.io-client';
 import { BellRing, X } from 'lucide-react';
@@ -85,7 +85,8 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
-    const socket = io('http://localhost:5000');
+    const socketHost = BASE_URL.replace('/api', '');
+    const socket = io(socketHost);
 
     socket.on('connect', () => {
       console.log('⚡ Connected to Socket.io real-time server');

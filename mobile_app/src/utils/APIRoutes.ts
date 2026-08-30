@@ -17,8 +17,9 @@ function getHost(): string {
   return 'localhost';
 }
 
+export const RENDER_BACKEND_URL = 'https://amrutam-project.onrender.com/api';
 export const IP_ADDRESS = getHost();
-export const BASE_URL = `http://${IP_ADDRESS}:5000/api`;
+export const BASE_URL = RENDER_BACKEND_URL;
 
 export const API_ROUTES = {
   BASE_URL,

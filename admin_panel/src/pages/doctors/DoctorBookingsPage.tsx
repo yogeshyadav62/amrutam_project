@@ -11,6 +11,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
+import { API_ROUTES } from '../../utils/Routes';
+
 interface Props {
   user: AuthUser;
 }
@@ -24,7 +26,7 @@ export function DoctorBookingsPage({ user }: Props) {
   const fetchBookings = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/doctors/${user.id}/bookings`);
+      const res = await axios.get(API_ROUTES.DOCTOR_BOOKINGS(user.id));
       if (res.data?.success) {
         setBookings(res.data.data);
       }
@@ -41,7 +43,7 @@ export function DoctorBookingsPage({ user }: Props) {
 
   const handleUpdateStatus = async (bookingId: string, status: Booking['status']) => {
     try {
-      const res = await axios.patch(`http://localhost:5000/api/bookings/${bookingId}/status`, { status });
+      const res = await axios.patch(API_ROUTES.UPDATE_BOOKING_STATUS(bookingId), { status });
       if (res.data?.success) {
         setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, status } : b)));
       }

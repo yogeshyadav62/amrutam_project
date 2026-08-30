@@ -13,6 +13,7 @@ import {
   Mail,
   RefreshCw,
 } from 'lucide-react';
+import { API_ROUTES } from '../../utils/Routes';
 
 interface Props {
   user: AuthUser;
@@ -28,12 +29,12 @@ export function DoctorDashboardPage({ user }: Props) {
   const fetchDoctorData = async () => {
     setIsLoading(true);
     try {
-      const bookingsRes = await axios.get(`http://localhost:5000/api/doctors/${user.id}/bookings`);
+      const bookingsRes = await axios.get(API_ROUTES.DOCTOR_BOOKINGS(user.id));
       if (bookingsRes.data?.success) {
         setBookings(bookingsRes.data.data);
       }
 
-      const docRes = await axios.get(`http://localhost:5000/api/doctors/${user.id}`);
+      const docRes = await axios.get(API_ROUTES.DOCTOR_BY_ID(user.id));
       if (docRes.data?.success && Array.isArray(docRes.data.data.availableSlots)) {
         setSlots(docRes.data.data.availableSlots);
       }
@@ -50,7 +51,7 @@ export function DoctorDashboardPage({ user }: Props) {
 
   const handleUpdateStatus = async (bookingId: string, status: Booking['status']) => {
     try {
-      const res = await axios.patch(`http://localhost:5000/api/bookings/${bookingId}/status`, { status });
+      const res = await axios.patch(API_ROUTES.UPDATE_BOOKING_STATUS(bookingId), { status });
       if (res.data?.success) {
         setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, status } : b)));
       }
@@ -75,7 +76,7 @@ export function DoctorDashboardPage({ user }: Props) {
   const handleSaveSlots = async () => {
     setIsSavingSlots(true);
     try {
-      const res = await axios.put(`http://localhost:5000/api/doctors/${user.id}/slots`, {
+      const res = await axios.put(`${API_ROUTES.DOCTORS}/${user.id}/slots`, {
         availableSlots: slots,
       });
       if (res.data?.success) {

@@ -7,7 +7,8 @@ export const NAV_ROUTES = {
   NOTIFICATIONS: 'notifications',
 } as const;
 
-export const BASE_URL = 'http://localhost:5000/api';
+export const RENDER_BACKEND_URL = 'https://amrutam-project.onrender.com/api';
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL || RENDER_BACKEND_URL;
 
 export const API_ROUTES = {
   BASE_URL,

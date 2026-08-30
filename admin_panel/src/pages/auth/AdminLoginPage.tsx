@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShieldCheck, UserCheck, Lock, Mail, ArrowRight, Stethoscope } from 'lucide-react';
 import axios from 'axios';
 import type { AuthUser } from '../../types';
+import { BASE_URL } from '../../utils/Routes';
 
 interface Props {
   onLoginSuccess: (user: AuthUser, token: string) => void;
@@ -55,7 +56,7 @@ export function AdminLoginPage({ onLoginSuccess, theme }: Props) {
           setErrorMsg('Invalid Super Admin email or password. (Default: admin@amrutam.com / admin123)');
         }
       } else {
-        const res = await axios.post('http://localhost:5000/api/auth/doctor-login', {
+        const res = await axios.post(`${BASE_URL}/auth/doctor-login`, {
           email: email.toLowerCase().trim(),
           password,
         });
