@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Text,
   View,
@@ -10,6 +10,7 @@ import { navigateTo } from '@/navigation/Stack';
 import { useAppDispatch, useAppSelector, useTheme } from '@/redux/hooks';
 import { updateQuantity, removeFromCart, clearCart } from '@/redux/slices/cartSlice';
 import { useToast } from '@/components/common/Toast';
+import { AuthModal } from '@/components/auth/AuthModal';
 import { ArrowLeft, ShoppingBag, Trash2, Plus, Minus, CheckCircle } from 'lucide-react-native';
 
 export function CartScreen() {
@@ -18,17 +19,30 @@ export function CartScreen() {
   const { showToast } = useToast();
   const dispatch = useAppDispatch();
 
+  const auth = useAppSelector((state) => state.auth);
   const cart = useAppSelector((state) => state.cart.cart);
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const discount = subtotal > 1000 ? Math.floor(subtotal * 0.1) : 0;
   const delivery = subtotal === 0 ? 0 : subtotal >= 750 ? 0 : 50;
   const grandTotal = subtotal - discount + delivery;
 
-  const handleCheckout = () => {
-    showToast('Order Placed Successfully! 🛒', 'success');
+  const executeOrder = () => {
+    const patientName = auth.user?.name || 'Patient';
+    showToast(`Order Placed Successfully for ${patientName}! 🛒`, 'success');
     dispatch(clearCart());
     navigateTo.shop();
+  };
+
+  const handleCheckout = () => {
+    if (!auth.isAuthenticated) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    executeOrder();
   };
 
   return (
@@ -51,7 +65,7 @@ export function CartScreen() {
           <ShoppingBag size={64} color="#94A3B8" />
           <Text className={`text-xl font-black mt-4 ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>Your Cart is Empty</Text>
           <Text className={`text-xs text-center mt-1.5 mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Explore 20,000+ authentic Ayurvedic formulations.
+            Explore authentic Ayurvedic formulations.
           </Text>
           <TouchableOpacity
             className="bg-emerald-600 px-6 py-3 rounded-2xl"
@@ -157,6 +171,12 @@ export function CartScreen() {
           </View>
         </>
       )}
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={executeOrder}
+      />
     </View>
   );
 }

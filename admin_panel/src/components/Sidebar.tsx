@@ -11,17 +11,21 @@ import {
   ChevronRight,
   List,
   PlusCircle,
+  LogOut,
 } from 'lucide-react';
 import { NAV_ROUTES } from '../utils/Routes';
+import type { AuthUser } from '../types';
 
 interface Props {
+  user: AuthUser;
   activeTab: string;
   subView: 'manage' | 'add';
   onNavigate: (tab: string, subView?: 'manage' | 'add') => void;
+  onLogout: () => void;
   theme: 'dark' | 'light';
 }
 
-export const Sidebar: React.FC<Props> = ({ activeTab, subView, onNavigate, theme }) => {
+export const Sidebar: React.FC<Props> = ({ user, activeTab, subView, onNavigate, onLogout, theme }) => {
   const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({
     [NAV_ROUTES.DOCTORS]: true,
     [NAV_ROUTES.PRODUCTS]: true,
@@ -34,7 +38,9 @@ export const Sidebar: React.FC<Props> = ({ activeTab, subView, onNavigate, theme
     }));
   };
 
-  const navItems = [
+  const isSuperAdmin = user.role === 'super_admin';
+
+  const superAdminNavItems = [
     {
       id: NAV_ROUTES.DASHBOARD,
       label: 'Dashboard',
@@ -63,7 +69,7 @@ export const Sidebar: React.FC<Props> = ({ activeTab, subView, onNavigate, theme
     },
     {
       id: NAV_ROUTES.BOOKINGS,
-      label: 'Consultations',
+      label: 'All Consultations',
       icon: CalendarCheck,
       isDropdown: false,
     },
@@ -81,6 +87,22 @@ export const Sidebar: React.FC<Props> = ({ activeTab, subView, onNavigate, theme
     },
   ];
 
+  const doctorNavItems = [
+    {
+      id: NAV_ROUTES.DASHBOARD,
+      label: 'Doctor Portal',
+      icon: LayoutDashboard,
+      isDropdown: false,
+    },
+    {
+      id: NAV_ROUTES.BOOKINGS,
+      label: 'My Consultations',
+      icon: CalendarCheck,
+      isDropdown: false,
+    },
+  ];
+
+  const navItems = isSuperAdmin ? superAdminNavItems : doctorNavItems;
   const isDark = theme === 'dark';
 
   return (
@@ -97,13 +119,13 @@ export const Sidebar: React.FC<Props> = ({ activeTab, subView, onNavigate, theme
           <div>
             <h1 className={`text-lg font-black tracking-wider ${isDark ? 'text-white' : 'text-slate-900'}`}>AMRUTAM</h1>
             <p className="text-[10px] font-bold tracking-widest text-emerald-500 uppercase">
-              Admin Portal v1.0
+              {isSuperAdmin ? 'Super Admin' : 'Doctor Portal'}
             </p>
           </div>
         </div>
 
         {/* Navigation Links */}
-        <nav className="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-100px)]">
+        <nav className="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-160px)]">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isTabActive = activeTab === item.id;
@@ -112,7 +134,6 @@ export const Sidebar: React.FC<Props> = ({ activeTab, subView, onNavigate, theme
             if (item.isDropdown && item.subItems) {
               return (
                 <div key={item.id} className="space-y-1">
-                  {/* Dropdown Header Button */}
                   <button
                     type="button"
                     onClick={() => {
@@ -138,7 +159,6 @@ export const Sidebar: React.FC<Props> = ({ activeTab, subView, onNavigate, theme
                     )}
                   </button>
 
-                  {/* Submenu Dropdown List */}
                   {isOpen && (
                     <div className={`pl-6 space-y-1 my-1 border-l-2 ml-5 animate-in fade-in duration-200 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                       {item.subItems.map((sub) => {
@@ -185,6 +205,22 @@ export const Sidebar: React.FC<Props> = ({ activeTab, subView, onNavigate, theme
             );
           })}
         </nav>
+      </div>
+
+      {/* Footer User Info & Logout Button */}
+      <div className={`p-4 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+        <div className="flex items-center justify-between">
+          <div className="min-w-0 pr-2">
+            <p className={`text-xs font-black truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{user.name}</p>
+            <p className="text-[11px] font-semibold text-emerald-500 truncate">{user.email}</p>
+          </div>
+          <button
+            onClick={onLogout}
+            title="Logout Portal"
+            className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition">
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </aside>
   );

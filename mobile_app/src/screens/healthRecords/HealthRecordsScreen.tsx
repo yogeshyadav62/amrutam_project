@@ -16,23 +16,30 @@ import { API_ROUTES } from '@/utils/APIRoutes';
 import { TimelineItem } from '@/components/healthRecords/TimelineItem';
 import { AttachmentPreviewModal } from './AttachmentPreviewModal';
 import { useTheme } from '@/redux/hooks';
-import { Search, FileText, Tag, Calendar, Sun, Moon } from 'lucide-react-native';
+import { Storage } from '@/services/storageService';
+import { Search, FileText, Tag, Calendar, Sun, Moon, XCircle } from 'lucide-react-native';
 
 const RECORD_TYPES = ['All', 'Lab Report', 'Prescription', 'Consultation', 'Vaccination', 'Allergy'];
 const RECORD_TAGS = ['All', '#Prakriti', '#BloodTest', '#Skin', '#Panchakarma', '#FollowUp', '#Digestive'];
+const STORAGE_KEY_HEALTH = 'amrutam_cached_health_records';
 
 export function HealthRecordsScreen() {
   const insets = useSafeAreaInsets();
   const { isDark, toggleTheme } = useTheme();
 
-  const [groupedRecords, setGroupedRecords] = useState<GroupedHealthRecords[]>([]);
+  // Load initial timeline from MMKV local storage
+  const [groupedRecords, setGroupedRecords] = useState<GroupedHealthRecords[]>(() => {
+    return Storage.getItem<GroupedHealthRecords[]>(STORAGE_KEY_HEALTH, []) || [];
+  });
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('All');
   const [selectedTag, setSelectedTag] = useState('All');
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(() => {
+    return groupedRecords.reduce((acc, g) => acc + (g.data?.length || 0), 0);
+  });
   const [selectedRecordForPreview, setSelectedRecordForPreview] = useState<HealthRecord | null>(null);
 
   const fetchHealthRecords = async (pageNum: number, isRefresh = false) => {
@@ -42,20 +49,34 @@ export function HealthRecordsScreen() {
     try {
       const res = await axios.get(API_ROUTES.HEALTH_RECORDS, {
         params: { page: pageNum, pageSize: 50, type: selectedType, tag: selectedTag },
-        timeout: 4000,
+        timeout: 6000,
       });
 
-      const payload = res.data.data;
-      setTotalCount(payload.totalCount);
-      setHasMore(payload.hasMore);
+      const payload = res.data?.data;
+      if (payload && Array.isArray(payload.groups)) {
+        const groupsList: GroupedHealthRecords[] = payload.groups;
+        setTotalCount(payload.totalCount || 0);
+        setHasMore(payload.hasMore || false);
+        setGroupedRecords(groupsList);
 
-      if (isRefresh || pageNum === 1) {
-        setGroupedRecords(payload.groups);
-      } else {
-        setGroupedRecords(payload.groups);
+        if (groupsList.length > 0) {
+          // Persist fresh backend health timeline to MMKV local storage
+          Storage.setItem(STORAGE_KEY_HEALTH, groupsList);
+        }
       }
     } catch (err) {
-      console.warn('API fetch error in HealthRecordsScreen:', err);
+      console.warn('API fetch warning in HealthRecordsScreen (loading offline MMKV cache):', err);
+      // Net off / Error: load from MMKV local storage
+      const cached = Storage.getItem<GroupedHealthRecords[]>(STORAGE_KEY_HEALTH, []);
+      if (cached && cached.length > 0) {
+        setGroupedRecords(cached);
+        const count = cached.reduce((acc, g) => acc + (g.data?.length || 0), 0);
+        setTotalCount(count);
+        setHasMore(false);
+      } else if (isRefresh || pageNum === 1) {
+        setGroupedRecords([]);
+        setTotalCount(0);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -73,101 +94,6 @@ export function HealthRecordsScreen() {
       fetchHealthRecords(nextPage);
     }
   };
-
-  const renderHeader = () => (
-    <View className="mb-2.5">
-      <View className="flex-row justify-between items-center mb-4 pt-2">
-        <View>
-          <Text className={`text-3xl font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>
-            Health Records
-          </Text>
-          <Text className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            10,000+ Patient Timeline ({totalCount || 10000} Records)
-          </Text>
-        </View>
-
-        {/* Redux Toolkit Dark / Light Mode Toggle Button */}
-        <TouchableOpacity
-          className={`w-10 h-10 rounded-full items-center justify-center border ${
-            isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200 shadow-sm'
-          }`}
-          onPress={toggleTheme}
-          activeOpacity={0.8}>
-          {isDark ? <Sun size={20} color="#F59E0B" /> : <Moon size={20} color="#6366F1" />}
-        </TouchableOpacity>
-      </View>
-
-      <View
-        className={`flex-row items-center px-3.5 py-2.5 rounded-2xl mb-3.5 border ${
-          isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200 shadow-sm'
-        }`}>
-        <Search size={18} color="#94A3B8" />
-        <TextInput
-          className={`flex-1 ml-2.5 text-sm p-0 ${isDark ? 'text-slate-50' : 'text-slate-900'}`}
-          placeholder="Search 10,000 records, doctors..."
-          placeholderTextColor={isDark ? '#94A3B8' : '#64748B'}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
-
-      <View className="flex-row items-center gap-1 mb-1.5 mt-1">
-        <FileText size={12} color="#10B981" />
-        <Text className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          Record Type:
-        </Text>
-      </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2.5">
-        {RECORD_TYPES.map((type) => (
-          <TouchableOpacity
-            key={type}
-            onPress={() => setSelectedType(type)}
-            className={`px-3.5 py-1.5 rounded-2xl mr-2 border ${
-              selectedType === type
-                ? 'bg-emerald-600 border-emerald-600'
-                : isDark
-                ? 'bg-slate-800 border-slate-700'
-                : 'bg-white border-slate-200'
-            }`}>
-            <Text
-              className={`text-xs font-bold ${
-                selectedType === type ? 'text-white' : isDark ? 'text-slate-300' : 'text-slate-600'
-              }`}>
-              {type}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <View className="flex-row items-center gap-1 mb-1.5 mt-1">
-        <Tag size={12} color="#10B981" />
-        <Text className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          Filter by Tag:
-        </Text>
-      </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2.5">
-        {RECORD_TAGS.map((tag) => (
-          <TouchableOpacity
-            key={tag}
-            onPress={() => setSelectedTag(tag)}
-            className={`px-3 py-1 rounded-xl mr-2 border ${
-              selectedTag === tag
-                ? 'bg-emerald-500/20 border-emerald-500'
-                : isDark
-                ? 'bg-slate-800 border-slate-700'
-                : 'bg-white border-slate-200'
-            }`}>
-            <Text
-              className={`text-[11px] font-bold ${
-                selectedTag === tag ? 'text-emerald-600' : isDark ? 'text-slate-400' : 'text-slate-500'
-              }`}>
-              {tag}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
 
   return (
     <View
@@ -187,7 +113,107 @@ export function HealthRecordsScreen() {
             </Text>
           </View>
         )}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={
+          <View className="mb-2.5">
+            <View className="flex-row justify-between items-center mb-3 pt-2">
+              <View>
+                <Text className={`text-2xl font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>
+                  Health Records
+                </Text>
+                <Text className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Patient Health Timeline ({totalCount} Records)
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                className={`w-10 h-10 rounded-full items-center justify-center border ${
+                  isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200 shadow-sm'
+                }`}
+                onPress={toggleTheme}
+                activeOpacity={0.8}>
+                {isDark ? <Sun size={20} color="#F59E0B" /> : <Moon size={20} color="#6366F1" />}
+              </TouchableOpacity>
+            </View>
+
+            <View
+              className={`flex-row items-center px-3.5 h-11 rounded-xl mb-3 border ${
+                isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200 shadow-sm'
+              }`}>
+              <Search size={16} color="#94A3B8" />
+              <TextInput
+                style={{ paddingVertical: 0, textAlignVertical: 'center', includeFontPadding: false }}
+                className={`flex-1 ml-2 text-xs font-semibold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}
+                placeholder="Search Doctor or Report..."
+                placeholderTextColor={isDark ? '#94A3B8' : '#64748B'}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery.trim() !== '' && (
+                <TouchableOpacity
+                  onPress={() => setSearchQuery('')}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <XCircle size={16} color={isDark ? '#94A3B8' : '#64748B'} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <View className="flex-row items-center gap-1 mb-1.5 mt-1">
+              <FileText size={12} color="#10B981" />
+              <Text className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Record Type:
+              </Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2.5">
+              {RECORD_TYPES.map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  onPress={() => setSelectedType(type)}
+                  className={`px-3.5 py-1.5 rounded-2xl mr-2 border ${
+                    selectedType === type
+                      ? 'bg-emerald-600 border-emerald-600'
+                      : isDark
+                      ? 'bg-slate-800 border-slate-700'
+                      : 'bg-white border-slate-200'
+                  }`}>
+                  <Text
+                    className={`text-xs font-bold ${
+                      selectedType === type ? 'text-white' : isDark ? 'text-slate-300' : 'text-slate-600'
+                    }`}>
+                    {type}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View className="flex-row items-center gap-1 mb-1.5 mt-1">
+              <Tag size={12} color="#10B981" />
+              <Text className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Filter by Tag:
+              </Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2.5">
+              {RECORD_TAGS.map((tag) => (
+                <TouchableOpacity
+                  key={tag}
+                  onPress={() => setSelectedTag(tag)}
+                  className={`px-3 py-1 rounded-xl mr-2 border ${
+                    selectedTag === tag
+                      ? 'bg-emerald-500/20 border-emerald-500'
+                      : isDark
+                      ? 'bg-slate-800 border-slate-700'
+                      : 'bg-white border-slate-200'
+                  }`}>
+                  <Text
+                    className={`text-[11px] font-bold ${
+                      selectedTag === tag ? 'text-emerald-600' : isDark ? 'text-slate-400' : 'text-slate-500'
+                    }`}>
+                    {tag}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        }
         ListFooterComponent={
           isLoading ? (
             <View className="py-5 items-center">

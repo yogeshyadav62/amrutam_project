@@ -9,7 +9,11 @@ import { AddProductPage } from './pages/products/AddProductPage';
 import { ManageBookingsPage } from './pages/bookings/ManageBookingsPage';
 import { ManageRecordsPage } from './pages/records/ManageRecordsPage';
 import { NotificationsPage } from './pages/notifications/NotificationsPage';
+import { AdminLoginPage } from './pages/auth/AdminLoginPage';
+import { DoctorDashboardPage } from './pages/doctors/DoctorDashboardPage';
+import { DoctorBookingsPage } from './pages/doctors/DoctorBookingsPage';
 import { NAV_ROUTES } from './utils/Routes';
+import type { AuthUser } from './types';
 import { io } from 'socket.io-client';
 import { BellRing, X } from 'lucide-react';
 
@@ -38,6 +42,18 @@ function parseHash(): { tab: string; subView: 'manage' | 'add' } {
 }
 
 export function App() {
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    const stored = localStorage.getItem('amrutam_admin_user');
+    if (stored) {
+      try {
+        return JSON.parse(stored) as AuthUser;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
   const initial = parseHash();
   const [activeTab, setActiveTab] = useState<string>(initial.tab);
   const [subView, setSubView] = useState<'manage' | 'add'>(initial.subView);
@@ -55,7 +71,6 @@ export function App() {
   };
 
   useEffect(() => {
-    // Synchronize theme class on document element and body
     if (theme === 'light') {
       document.documentElement.classList.add('light');
       document.documentElement.classList.remove('dark');
@@ -70,7 +85,6 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
-    // Socket.io Real-time WebSocket connection
     const socket = io('http://localhost:5000');
 
     socket.on('connect', () => {
@@ -96,7 +110,6 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    // Keep URL hash synchronized on initial load
     const currentHash = subView === 'add' ? `${activeTab}/add` : activeTab;
     if (window.location.hash !== `#${currentHash}`) {
       window.history.replaceState(null, '', `#${currentHash}`);
@@ -117,6 +130,18 @@ export function App() {
     };
   }, []);
 
+  const handleLoginSuccess = (user: AuthUser, token: string) => {
+    setCurrentUser(user);
+    localStorage.setItem('amrutam_admin_user', JSON.stringify(user));
+    localStorage.setItem('amrutam_admin_token', token);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('amrutam_admin_user');
+    localStorage.removeItem('amrutam_admin_token');
+  };
+
   const navigateTo = (tab: string, sub: 'manage' | 'add' = 'manage') => {
     setActiveTab(tab);
     setSubView(sub);
@@ -134,6 +159,12 @@ export function App() {
   };
 
   const isDark = theme === 'dark';
+
+  if (!currentUser) {
+    return <AdminLoginPage onLoginSuccess={handleLoginSuccess} theme={theme} />;
+  }
+
+  const isSuperAdmin = currentUser.role === 'super_admin';
 
   return (
     <div
@@ -157,27 +188,42 @@ export function App() {
       )}
 
       {/* Navigation Sidebar */}
-      <Sidebar activeTab={activeTab} subView={subView} onNavigate={navigateTo} theme={theme} />
+      <Sidebar
+        user={currentUser}
+        activeTab={activeTab}
+        subView={subView}
+        onNavigate={navigateTo}
+        onLogout={handleLogout}
+        theme={theme}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <Navbar
+          user={currentUser}
           onRefresh={handleRefresh}
           isRefreshing={isSyncing}
           theme={theme}
           onToggleTheme={toggleTheme}
+          onLogout={handleLogout}
         />
 
         <main className="flex-1 p-8 max-w-7xl w-full mx-auto overflow-y-auto">
+          {/* Super Admin Dashboard vs Doctor Portal Dashboard */}
           {activeTab === NAV_ROUTES.DASHBOARD && (
-            <DashboardPage
-              onNavigate={(tab) => navigateTo(tab, 'manage')}
-              onOpenDoctorAdd={() => navigateTo(NAV_ROUTES.DOCTORS, 'add')}
-              onOpenProductAdd={() => navigateTo(NAV_ROUTES.PRODUCTS, 'add')}
-            />
+            isSuperAdmin ? (
+              <DashboardPage
+                onNavigate={(tab) => navigateTo(tab, 'manage')}
+                onOpenDoctorAdd={() => navigateTo(NAV_ROUTES.DOCTORS, 'add')}
+                onOpenProductAdd={() => navigateTo(NAV_ROUTES.PRODUCTS, 'add')}
+              />
+            ) : (
+              <DoctorDashboardPage user={currentUser} />
+            )
           )}
 
-          {activeTab === NAV_ROUTES.DOCTORS && (
+          {/* Super Admin Doctor Management */}
+          {activeTab === NAV_ROUTES.DOCTORS && isSuperAdmin && (
             subView === 'add' ? (
               <AddDoctorPage
                 onBack={() => navigateTo(NAV_ROUTES.DOCTORS, 'manage')}
@@ -188,7 +234,8 @@ export function App() {
             )
           )}
 
-          {activeTab === NAV_ROUTES.PRODUCTS && (
+          {/* Super Admin Product Management */}
+          {activeTab === NAV_ROUTES.PRODUCTS && isSuperAdmin && (
             subView === 'add' ? (
               <AddProductPage
                 onBack={() => navigateTo(NAV_ROUTES.PRODUCTS, 'manage')}
@@ -199,11 +246,19 @@ export function App() {
             )
           )}
 
-          {activeTab === NAV_ROUTES.BOOKINGS && <ManageBookingsPage />}
+          {/* Bookings View (Dedicated Doctor Consultations Page or Super Admin All Bookings) */}
+          {activeTab === NAV_ROUTES.BOOKINGS && (
+            isSuperAdmin ? (
+              <ManageBookingsPage />
+            ) : (
+              <DoctorBookingsPage user={currentUser} />
+            )
+          )}
 
-          {activeTab === NAV_ROUTES.RECORDS && <ManageRecordsPage />}
+          {/* Super Admin Records & Notifications */}
+          {activeTab === NAV_ROUTES.RECORDS && isSuperAdmin && <ManageRecordsPage />}
 
-          {activeTab === NAV_ROUTES.NOTIFICATIONS && <NotificationsPage />}
+          {activeTab === NAV_ROUTES.NOTIFICATIONS && isSuperAdmin && <NotificationsPage />}
         </main>
       </div>
     </div>

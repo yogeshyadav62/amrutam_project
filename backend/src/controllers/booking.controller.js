@@ -5,7 +5,7 @@ const { sendFirebasePushNotification } = require('../config/firebase');
 
 exports.createBooking = async (req, res) => {
   try {
-    const { doctorId, slotId, dateStr, slotTime } = req.body;
+    const { doctorId, slotId, dateStr, slotTime, patientId, patientName, patientEmail, patientPhone, notes } = req.body;
 
     if (slotId && slotId.includes('expired')) {
       return res.status(400).json({ success: false, error: 'SLOT_EXPIRED: Requested slot has expired.' });
@@ -31,16 +31,21 @@ exports.createBooking = async (req, res) => {
       doctorName: doctor ? doctor.name : 'Ayurvedic Specialist',
       doctorSpecialty: doctor ? doctor.specialty : 'Kaya Chikitsa',
       doctorFee: doctor ? doctor.consultationFee : 499,
+      patientId: patientId || `usr_guest`,
+      patientName: patientName || 'Patient',
+      patientEmail: patientEmail || 'patient@amrutam.com',
+      patientPhone: patientPhone || '+91 9876543210',
       slotId: slotId || `slot_${Date.now()}`,
       slotTime: slotTime || '10:00 AM',
       slotDate: dateStr || new Date().toISOString().split('T')[0],
+      notes: notes || '',
       status: 'Confirmed',
     });
 
     const now = new Date();
     const sentAt = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const notifTitle = 'Appointment Confirmed 🩺';
-    const notifMessage = `Aapka consultation ${booking.doctorName} ke sath ${booking.slotDate} (${booking.slotTime}) par confirm ho gaya hai!`;
+    const notifMessage = `${booking.patientName} ka consultation ${booking.doctorName} ke sath ${booking.slotDate} (${booking.slotTime}) par confirm ho gaya hai!`;
 
     // Save automatic notification log
     await Notification.create({
@@ -80,17 +85,23 @@ exports.getAllBookings = async (req, res) => {
     const pageSize = parseInt(req.query.pageSize || '15');
     const search = (req.query.search || '').trim();
     const status = req.query.status;
+    const patientId = req.query.patientId;
 
     const query = {};
     if (search) {
       query.$or = [
         { doctorName: { $regex: search, $options: 'i' } },
         { doctorSpecialty: { $regex: search, $options: 'i' } },
+        { patientName: { $regex: search, $options: 'i' } },
+        { patientPhone: { $regex: search, $options: 'i' } },
         { slotDate: { $regex: search, $options: 'i' } },
       ];
     }
     if (status && status !== 'All') {
       query.status = status;
+    }
+    if (patientId) {
+      query.patientId = patientId;
     }
 
     const totalCount = await Booking.countDocuments(query);
@@ -159,7 +170,7 @@ exports.updateBookingStatus = async (req, res) => {
     );
     if (booking) {
       const notifTitle = `Appointment Status: ${status} 🩺`;
-      const notifMessage = `Aapka ${booking.doctorName} ke sath consultation ${status} ho gaya hai.`;
+      const notifMessage = `${booking.patientName} ka consultation ${booking.doctorName} ke sath ${status} ho gaya hai.`;
 
       const io = req.app.get('io');
       if (io) {

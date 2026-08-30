@@ -1,6 +1,19 @@
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: 'super_admin' | 'doctor';
+  specialty?: string;
+  degree?: string;
+  hospital?: string;
+  consultationFee?: number;
+  availableSlots?: string[];
+}
+
 export interface Doctor {
   id: string;
   name: string;
+  email?: string;
   degree: string;
   specialty: string;
   experienceYears: number;
@@ -9,6 +22,7 @@ export interface Doctor {
   consultationFee: number;
   availableToday: boolean;
   nextAvailableSlot: string;
+  availableSlots?: string[];
   bio: string;
   hospital: string;
   languages: string[];
@@ -44,11 +58,16 @@ export interface Booking {
   doctorName: string;
   doctorSpecialty: string;
   doctorFee: number;
+  patientId?: string;
+  patientName?: string;
+  patientEmail?: string;
+  patientPhone?: string;
   slotId: string;
   slotTime: string;
   slotDate: string;
+  notes?: string;
   createdAt?: string;
-  status: 'Confirmed' | 'Pending' | 'Cancelled';
+  status: 'Confirmed' | 'Completed' | 'Pending' | 'Cancelled';
   isOfflineQueued?: boolean;
 }
 

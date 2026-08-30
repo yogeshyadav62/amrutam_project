@@ -1,15 +1,19 @@
 import React from 'react';
-import { Bell, Search, RefreshCw, UserCheck, Sun, Moon } from 'lucide-react';
+import { Bell, Search, RefreshCw, UserCheck, Sun, Moon, LogOut } from 'lucide-react';
+import type { AuthUser } from '../types';
 
 interface Props {
+  user: AuthUser;
   onRefresh: () => void;
   isRefreshing: boolean;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
+  onLogout: () => void;
 }
 
-export const Navbar: React.FC<Props> = ({ onRefresh, isRefreshing, theme, onToggleTheme }) => {
+export const Navbar: React.FC<Props> = ({ user, onRefresh, isRefreshing, theme, onToggleTheme, onLogout }) => {
   const isDark = theme === 'dark';
+  const initial = user.name ? user.name.replace('Dr. ', '').charAt(0).toUpperCase() : 'A';
 
   return (
     <header
@@ -72,18 +76,27 @@ export const Navbar: React.FC<Props> = ({ onRefresh, isRefreshing, theme, onTogg
 
         <div className={`h-6 w-px ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
 
-        {/* User Profile */}
+        {/* User Profile Info & Logout */}
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-extrabold text-sm shadow-sm">
-            A
+            {initial}
           </div>
           <div>
             <h4 className={`text-xs font-bold flex items-center gap-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              <span>Admin Vaidya</span>
+              <span>{user.name}</span>
               <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
             </h4>
-            <p className={`text-[10px] font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Super Admin • Amrutam</p>
+            <p className={`text-[10px] font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {user.role === 'super_admin' ? 'Super Admin' : 'Ayurvedic Doctor'} • Amrutam
+            </p>
           </div>
+
+          <button
+            onClick={onLogout}
+            title="Logout Portal"
+            className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition ml-2">
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </header>

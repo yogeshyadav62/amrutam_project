@@ -7,10 +7,15 @@ const BookingSchema = new mongoose.Schema(
     doctorName: { type: String, required: true },
     doctorSpecialty: { type: String },
     doctorFee: { type: Number, required: true },
+    patientId: { type: String },
+    patientName: { type: String, default: 'Anonymous Patient' },
+    patientEmail: { type: String, default: 'patient@amrutam.com' },
+    patientPhone: { type: String, default: '+91 9876543210' },
     slotId: { type: String, required: true },
     slotTime: { type: String, required: true },
     slotDate: { type: String, required: true },
-    status: { type: String, enum: ['Confirmed', 'Pending', 'Cancelled'], default: 'Confirmed' },
+    notes: { type: String },
+    status: { type: String, enum: ['Confirmed', 'Completed', 'Cancelled'], default: 'Confirmed' },
   },
   { timestamps: true }
 );

@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: '*',
-    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT'],
   },
 });
 
@@ -41,6 +41,7 @@ const PORT = process.env.PORT || 5000;
 connectDatabase();
 
 // Route Modules
+const authRoutes = require('./src/routes/auth.routes');
 const doctorRoutes = require('./src/routes/doctor.routes');
 const productRoutes = require('./src/routes/product.routes');
 const bookingRoutes = require('./src/routes/booking.routes');
@@ -49,6 +50,7 @@ const syncRoutes = require('./src/routes/sync.routes');
 const notificationRoutes = require('./src/routes/notification.routes');
 
 // Mount Routers
+app.use('/api/auth', authRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/bookings', bookingRoutes);
@@ -61,6 +63,7 @@ app.get('/', (req, res) => {
     success: true,
     message: '🚀 Amrutam Node.js + Express.js Backend Server API is active!',
     endpoints: [
+      '/api/auth',
       '/api/doctors',
       '/api/products',
       '/api/bookings',

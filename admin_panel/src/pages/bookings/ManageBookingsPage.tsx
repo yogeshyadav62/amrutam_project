@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  User,
 } from 'lucide-react';
 import { useApiGet, useApiPatch } from '../../utils/apiCall';
 import { API_ROUTES } from '../../utils/Routes';
@@ -62,13 +63,15 @@ export const ManageBookingsPage: React.FC = () => {
 
   const getBookingFields = (bk: Booking): DetailField[] => [
     { label: 'Booking Reference ID', value: bk.id },
+    { label: 'Patient Name', value: bk.patientName || 'Anonymous Patient' },
+    { label: 'Patient Contact', value: `${bk.patientEmail || ''} | ${bk.patientPhone || ''}` },
     { label: 'Doctor Name', value: bk.doctorName },
     { label: 'Specialty', value: bk.doctorSpecialty },
     { label: 'Consultation Fee', value: `₹${bk.doctorFee}` },
     { label: 'Scheduled Date', value: bk.slotDate },
     { label: 'Slot Time', value: bk.slotTime },
     { label: 'Booking Status', value: bk.status },
-    { label: 'Source', value: bk.isOfflineQueued ? 'Synced from Mobile App (Offline Queue)' : 'Live Mobile Video Booking' },
+    { label: 'Notes', value: bk.notes || 'None' },
   ];
 
   return (
@@ -78,11 +81,11 @@ export const ManageBookingsPage: React.FC = () => {
           <h2 className="text-2xl font-black text-white flex items-center gap-2">
             <span>Consultation Appointments</span>
             <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black">
-              {totalCount} Slots
+              {totalCount} Total Bookings
             </span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time appointment schedule, patient video call bookings, and status updates synced with MongoDB.
+            Real-time appointment schedule, patient details, and consultation status updates synced with MongoDB.
           </p>
         </div>
       </div>
@@ -93,7 +96,7 @@ export const ManageBookingsPage: React.FC = () => {
           <Search className="w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by doctor name or specialty..."
+            placeholder="Search patient, doctor, phone..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -113,7 +116,7 @@ export const ManageBookingsPage: React.FC = () => {
             className="px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-emerald-500 transition">
             <option value="All">All Statuses</option>
             <option value="Confirmed">Confirmed</option>
-            <option value="Pending">Pending</option>
+            <option value="Completed">Completed</option>
             <option value="Cancelled">Cancelled</option>
           </select>
 
@@ -148,9 +151,10 @@ export const ManageBookingsPage: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 text-[10px] font-extrabold uppercase tracking-wider">
                 <tr>
+                  <th className="px-3.5 py-3">Patient Info</th>
                   <th className="px-3.5 py-3">Doctor Info</th>
                   <th className="px-3.5 py-3">Slot Date & Time</th>
-                  <th className="px-3.5 py-3">Fee Paid</th>
+                  <th className="px-3.5 py-3">Fee</th>
                   <th className="px-3.5 py-3">Status</th>
                   <th className="px-3.5 py-3 text-right">Actions</th>
                 </tr>
@@ -159,29 +163,40 @@ export const ManageBookingsPage: React.FC = () => {
                 {bookings.map((bk) => (
                   <tr key={bk.id} className="hover:bg-slate-800/40 transition">
                     <td className="px-3.5 py-3">
-                      <p className="font-black text-slate-900 dark:text-white text-xs truncate max-w-[170px]">{bk.doctorName}</p>
-                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold truncate max-w-[170px]">{bk.doctorSpecialty}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-black text-xs shrink-0">
+                          <User className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="font-black text-white text-xs truncate max-w-[150px]">{bk.patientName || 'Anonymous Patient'}</p>
+                          <p className="text-[10px] text-slate-400 font-semibold truncate max-w-[150px]">{bk.patientPhone || bk.patientEmail || 'No contact'}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-3.5 py-3">
-                      <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
+                      <p className="font-black text-white text-xs truncate max-w-[160px]">{bk.doctorName}</p>
+                      <p className="text-[10px] text-emerald-400 font-semibold truncate max-w-[160px]">{bk.doctorSpecialty}</p>
+                    </td>
+                    <td className="px-3.5 py-3">
+                      <div className="flex items-center gap-1 text-slate-300 font-semibold text-[11px]">
                         <Clock className="w-3 h-3 text-slate-500 shrink-0" />
                         <span>{bk.slotDate} at {bk.slotTime}</span>
                       </div>
                     </td>
-                    <td className="px-3.5 py-3 font-black text-slate-900 dark:text-white text-xs">
+                    <td className="px-3.5 py-3 font-black text-white text-xs">
                       ₹{bk.doctorFee}
                     </td>
                     <td className="px-3.5 py-3">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
                           bk.status === 'Confirmed'
-                            ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                            : bk.status === 'Pending'
-                            ? 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400'
-                            : 'bg-red-500/10 border border-red-500/30 text-red-500 dark:text-red-400'
+                            ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                            : bk.status === 'Completed'
+                            ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400'
+                            : 'bg-red-500/10 border border-red-500/30 text-red-400'
                         }`}>
                         {bk.status === 'Confirmed' && <CheckCircle2 className="w-3 h-3" />}
-                        {bk.status === 'Pending' && <AlertCircle className="w-3 h-3" />}
+                        {bk.status === 'Completed' && <CheckCircle2 className="w-3 h-3" />}
                         {bk.status === 'Cancelled' && <XCircle className="w-3 h-3" />}
                         {bk.status}
                       </span>
@@ -189,22 +204,22 @@ export const ManageBookingsPage: React.FC = () => {
                     <td className="px-3.5 py-3 text-right space-x-1.5">
                       <button
                         onClick={() => setViewTarget(bk)}
-                        className="p-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 transition"
-                        title="View Booking Details">
+                        className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                        title="View Details">
                         <Eye className="w-3.5 h-3.5" />
                       </button>
 
-                      {bk.status !== 'Confirmed' && (
+                      {bk.status === 'Confirmed' && (
                         <button
-                          onClick={() => handleStatusChange(bk.id, 'Confirmed')}
-                          className="px-2 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition">
-                          Approve
+                          onClick={() => handleStatusChange(bk.id, 'Completed')}
+                          className="px-2.5 py-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] transition">
+                          Mark Completed
                         </button>
                       )}
                       {bk.status !== 'Cancelled' && (
                         <button
                           onClick={() => handleStatusChange(bk.id, 'Cancelled')}
-                          className="px-2 py-1 rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-500 dark:text-red-400 font-bold text-[10px] border border-red-500/30 transition">
+                          className="px-2 py-1 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-[10px] border border-red-500/30 transition">
                           Cancel
                         </button>
                       )}

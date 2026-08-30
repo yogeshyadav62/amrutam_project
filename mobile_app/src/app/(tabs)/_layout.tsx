@@ -38,6 +38,8 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        lazy: false, // Pre-render tab screens for instant 0ms tab switching
+        freezeOnBlur: true, // Prevent inactive background tab re-renders
         tabBarActiveTintColor: theme.active,
         tabBarInactiveTintColor: theme.inactive,
         tabBarStyle: {

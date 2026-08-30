@@ -70,6 +70,7 @@ export const ManageDoctorsPage: React.FC<Props> = ({ onOpenAddPage }) => {
     { label: 'Qualifications', value: doc.degree },
     { label: 'Specialty', value: doc.specialty },
     { label: 'Consultation Fee', value: `₹${doc.consultationFee}` },
+    { label: 'Available Consultation Slots', value: Array.isArray(doc.availableSlots) && doc.availableSlots.length > 0 ? doc.availableSlots.join(', ') : 'No slots configured yet' },
     { label: 'Hospital / Facility', value: doc.hospital || 'Amrutam Ayurvedic Clinic' },
     { label: 'Experience', value: `${doc.experienceYears} Years` },
     { label: 'Rating & Reviews', value: `★ ${doc.rating} (${doc.reviewCount} reviews)` },

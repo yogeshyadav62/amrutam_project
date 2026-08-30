@@ -2,6 +2,7 @@ const Doctor = require('../models/Doctor.model');
 const Booking = require('../models/Booking.model');
 const Notification = require('../models/Notification.model');
 const { sendFirebasePushNotification } = require('../config/firebase');
+const jwt = require('jsonwebtoken');
 
 exports.getDoctors = async (req, res) => {
   try {
@@ -26,7 +27,7 @@ exports.getDoctors = async (req, res) => {
     if (minExperience > 0) {
       query.experienceYears = { $gte: minExperience };
     }
-    if (maxFee > 0 && maxFee < 5000) {
+    if (maxFee > 0) {
       query.consultationFee = { $lte: maxFee };
     }
 
@@ -57,9 +58,20 @@ exports.getDoctors = async (req, res) => {
 
 exports.getDoctorById = async (req, res) => {
   try {
-    const doctor = await Doctor.findOne({ id: req.params.id });
+    const targetId = req.params.id;
+    const isObjId = require('mongoose').Types.ObjectId.isValid(targetId);
+    const doctor = await Doctor.findOne({
+      $or: [{ id: targetId }, ...(isObjId ? [{ _id: targetId }] : [])],
+    });
     if (!doctor) return res.status(404).json({ success: false, error: 'Doctor not found' });
-    res.json({ success: true, data: doctor });
+
+    const docIds = [targetId, ...(doctor ? [doctor.id, doctor._id.toString()] : [])];
+    const confirmedBookings = await Booking.find({ doctorId: { $in: docIds }, status: 'Confirmed' });
+
+    const docObj = doctor.toObject();
+    docObj.confirmedBookings = confirmedBookings;
+
+    res.json({ success: true, data: docObj });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -67,11 +79,17 @@ exports.getDoctorById = async (req, res) => {
 
 exports.createDoctor = async (req, res) => {
   try {
-    const { name, degree, specialty, experienceYears, consultationFee, hospital, bio, languages } = req.body;
+    const { name, email, password, degree, specialty, experienceYears, consultationFee, hospital, bio, languages, availableSlots } = req.body;
     
+    const cleanEmail = email ? email.toLowerCase().trim() : `doc_${Date.now()}@amrutam.com`;
+    const cleanPassword = password || 'Doctor@123';
+
     const newDoctor = await Doctor.create({
       id: `doc_${Date.now()}`,
       name: name || 'Dr. New Doctor',
+      email: cleanEmail,
+      password: cleanPassword,
+      role: 'doctor',
       degree: degree || 'BAMS, MD (Ayurveda)',
       specialty: specialty || 'Kaya Chikitsa (General Medicine)',
       experienceYears: parseInt(experienceYears || '5'),
@@ -80,6 +98,7 @@ exports.createDoctor = async (req, res) => {
       consultationFee: parseInt(consultationFee || '500'),
       availableToday: true,
       nextAvailableSlot: 'Available Today',
+      availableSlots: Array.isArray(availableSlots) ? availableSlots : [],
       bio: bio || 'Senior Ayurvedic Specialist',
       hospital: hospital || 'Amrutam Ayurvedic Center',
       languages: Array.isArray(languages) ? languages : ['English', 'Hindi'],
@@ -88,7 +107,6 @@ exports.createDoctor = async (req, res) => {
     const notifTitle = 'Naye Ayurvedic Vaidya Joined 🌿';
     const notifMessage = `${newDoctor.name} (${newDoctor.specialty}) ab online consultation ke liye available hain!`;
 
-    // Save notification log
     const now = new Date();
     await Notification.create({
       id: `notif_${Date.now()}`,
@@ -101,7 +119,6 @@ exports.createDoctor = async (req, res) => {
       sentAt: now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
     });
 
-    // WebSockets & FCM Auto Trigger
     const io = req.app.get('io');
     if (io) {
       io.emit('doctors_updated', { action: 'create', doctor: newDoctor });
@@ -110,6 +127,78 @@ exports.createDoctor = async (req, res) => {
     await sendFirebasePushNotification({ title: notifTitle, body: notifMessage, topic: 'all_users' });
 
     res.status(201).json({ success: true, data: newDoctor });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+exports.doctorLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const doctor = await Doctor.findOne({ email: cleanEmail });
+
+    if (!doctor) {
+      return res.status(401).json({ success: false, error: 'Invalid Doctor email or credentials' });
+    }
+
+    if (doctor.password && doctor.password !== password) {
+      return res.status(401).json({ success: false, error: 'Invalid password' });
+    }
+
+    const token = jwt.sign(
+      { id: doctor.id, role: 'doctor', email: doctor.email, name: doctor.name },
+      process.env.JWT_SECRET || 'amrutam_secret',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        doctor: {
+          id: doctor.id,
+          name: doctor.name,
+          email: doctor.email,
+          role: 'doctor',
+          specialty: doctor.specialty,
+          degree: doctor.degree,
+          hospital: doctor.hospital,
+          consultationFee: doctor.consultationFee,
+          availableSlots: doctor.availableSlots,
+        },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+exports.updateDoctorSlots = async (req, res) => {
+  try {
+    const { availableSlots } = req.body;
+    if (!Array.isArray(availableSlots)) {
+      return res.status(400).json({ success: false, error: 'availableSlots must be an array of time strings' });
+    }
+
+    const doctor = await Doctor.findOneAndUpdate(
+      { id: req.params.id },
+      { availableSlots },
+      { new: true }
+    );
+
+    if (!doctor) return res.status(404).json({ success: false, error: 'Doctor not found' });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('doctors_updated', { action: 'update', doctor });
+    }
+
+    res.json({ success: true, data: doctor });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -136,20 +225,25 @@ exports.getDoctorSlots = async (req, res) => {
     const doctorId = req.params.id;
     const dateStr = req.query.date || new Date().toISOString().split('T')[0];
 
+    const isObjId = require('mongoose').Types.ObjectId.isValid(doctorId);
+    const doctor = await Doctor.findOne({
+      $or: [{ id: doctorId }, ...(isObjId ? [{ _id: doctorId }] : [])],
+    });
+    const times = doctor && Array.isArray(doctor.availableSlots) ? doctor.availableSlots : [];
+
     const existingBookings = await Booking.find({
-      doctorId,
+      $or: [{ doctorId }, ...(doctor ? [{ doctorId: doctor.id }] : [])],
       slotDate: dateStr,
       status: 'Confirmed',
     });
-    const bookedSlotTimes = new Set(existingBookings.map(b => b.slotTime));
+    const bookedSlotTimes = new Set(existingBookings.map((b) => b.slotTime));
 
-    const times = ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:30 PM', '05:00 PM', '06:30 PM'];
     const slots = times.map((time, idx) => ({
       id: `${doctorId}_${dateStr}_${idx}`,
       time,
       date: dateStr,
       isBooked: bookedSlotTimes.has(time),
-      isExpired: idx === 0 && dateStr === new Date().toISOString().split('T')[0],
+      isExpired: false,
     }));
 
     res.json({ success: true, data: slots });
@@ -161,7 +255,13 @@ exports.getDoctorSlots = async (req, res) => {
 exports.getDoctorBookings = async (req, res) => {
   try {
     const doctorId = req.params.id;
-    const bookings = await Booking.find({ doctorId }).sort({ createdAt: -1 });
+    const isObjId = require('mongoose').Types.ObjectId.isValid(doctorId);
+    const doctor = await Doctor.findOne({
+      $or: [{ id: doctorId }, ...(isObjId ? [{ _id: doctorId }] : [])],
+    });
+
+    const docIds = [doctorId, ...(doctor ? [doctor.id, doctor._id.toString()] : [])];
+    const bookings = await Booking.find({ doctorId: { $in: docIds } }).sort({ createdAt: -1 });
     res.json({ success: true, data: bookings });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

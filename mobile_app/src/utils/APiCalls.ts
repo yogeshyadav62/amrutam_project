@@ -14,6 +14,7 @@ export interface Doctor {
   consultationFee: number;
   availableToday: boolean;
   nextAvailableSlot: string;
+  availableSlots?: string[];
   bio: string;
   hospital: string;
   languages: string[];
@@ -76,11 +77,15 @@ export interface Booking {
   doctorName: string;
   doctorSpecialty: string;
   doctorFee: number;
+  patientId?: string;
+  patientName?: string;
+  patientEmail?: string;
+  patientPhone?: string;
   slotId: string;
   slotTime: string;
   slotDate: string;
   createdAt: string;
-  status: 'Confirmed' | 'Pending' | 'Cancelled';
+  status: 'Confirmed' | 'Completed' | 'Pending' | 'Cancelled';
   isOfflineQueued?: boolean;
 }
 

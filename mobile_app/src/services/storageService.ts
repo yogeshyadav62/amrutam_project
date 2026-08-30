@@ -15,9 +15,23 @@ try {
     set: (key, value) => mmkv.set(key, value),
     getString: (key) => mmkv.getString(key),
     delete: (key) => {
-      mmkv.remove(key);
+      try {
+        if (typeof (mmkv as any).delete === 'function') {
+          (mmkv as any).delete(key);
+        } else if (typeof (mmkv as any).remove === 'function') {
+          (mmkv as any).remove(key);
+        }
+      } catch (err) {
+        console.warn('MMKV delete error:', err);
+      }
     },
-    clearAll: () => mmkv.clearAll(),
+    clearAll: () => {
+      try {
+        mmkv.clearAll();
+      } catch (err) {
+        console.warn('MMKV clearAll error:', err);
+      }
+    },
   };
 } catch (error) {
   // Fallback using in-memory / localStorage
@@ -59,7 +73,7 @@ export const Storage = {
       const stringified = typeof value === 'string' ? value : JSON.stringify(value);
       storageInstance.set(key, stringified);
     } catch (e) {
-      console.error('[MMKV Storage] Error setItem:', e);
+      console.warn('[Storage] Error setItem:', e);
     }
   },
 
@@ -81,7 +95,7 @@ export const Storage = {
     try {
       storageInstance.delete(key);
     } catch (e) {
-      console.error('[MMKV Storage] Error removeItem:', e);
+      console.warn('[Storage] Error removeItem:', e);
     }
   },
 
@@ -89,7 +103,7 @@ export const Storage = {
     try {
       storageInstance.clearAll();
     } catch (e) {
-      console.error('[MMKV Storage] Error clear:', e);
+      console.warn('[Storage] Error clear:', e);
     }
   },
 };
