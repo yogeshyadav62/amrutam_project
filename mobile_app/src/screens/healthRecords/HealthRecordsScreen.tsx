@@ -67,7 +67,9 @@ export function HealthRecordsScreen() {
   const fetchHealthRecords = async (pageNum: number, isRefresh = false) => {
     if (loadingRef.current && !isRefresh) return;
     loadingRef.current = true;
-    setIsLoading(true);
+    if (groupedRecords.length === 0 || isRefresh) {
+      setIsLoading(true);
+    }
 
     try {
       const res = await axios.get(API_ROUTES.HEALTH_RECORDS, {
@@ -78,7 +80,7 @@ export function HealthRecordsScreen() {
           type: selectedType,
           tag: selectedTag,
         },
-        timeout: 6000,
+        timeout: 3000,
       });
 
       const payload = res.data?.data;

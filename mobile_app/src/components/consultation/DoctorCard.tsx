@@ -29,9 +29,10 @@ const DUMMY_DOCTOR_IMAGES = [
 
 interface Props {
   doctor: Doctor;
+  index?: number;
 }
 
-export const DoctorCard = memo<Props>(({ doctor }) => {
+export const DoctorCard = memo<Props>(({ doctor, index = 0 }) => {
   const { isDark } = useTheme();
   const router = useAppRouter();
   const auth = useAppSelector((state) => state.auth);
@@ -39,6 +40,17 @@ export const DoctorCard = memo<Props>(({ doctor }) => {
 
   const charCodeSum = (doctor.id || doctor.name || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const doctorAvatar = (doctor as any).imageUrl || DUMMY_DOCTOR_IMAGES[charCodeSum % DUMMY_DOCTOR_IMAGES.length];
+  const shouldShowNetworkImage = index < 2;
+
+  const rawDoctorName = doctor.name || 'Ayurvedic Vaidya';
+  const nameInitials = rawDoctorName
+    .replace(/^Dr\.\s*/i, '')
+    .split(' ')
+    .map((n) => n[0])
+    .filter(Boolean)
+    .join('')
+    .substring(0, 2)
+    .toUpperCase() || 'AV';
 
   const userBooking = bookings.find((b) => {
     if (b.status === 'Cancelled') return false;
@@ -107,7 +119,13 @@ export const DoctorCard = memo<Props>(({ doctor }) => {
         <View style={styles.doctorInfoRow}>
           {/* Round Doctor Avatar with Green Overlay Shield */}
           <View style={styles.avatarWrapper}>
-            <Image source={{ uri: doctorAvatar }} style={styles.avatarImage} resizeMode="cover" />
+            {shouldShowNetworkImage ? (
+              <Image source={{ uri: doctorAvatar }} style={styles.avatarImage} resizeMode="cover" />
+            ) : (
+              <View style={[styles.avatarImage, { backgroundColor: isDark ? '#334155' : '#EAF2E8', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#CDE0CB' }]}>
+                <Text style={{ color: isDark ? '#38BDF8' : '#2D5A27', fontSize: 16, fontWeight: '900' }}>{nameInitials}</Text>
+              </View>
+            )}
             <View style={styles.verifiedBadge}>
               <ShieldCheck size={10} color="#FFFFFF" />
             </View>

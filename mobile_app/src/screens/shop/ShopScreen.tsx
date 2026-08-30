@@ -50,12 +50,14 @@ export function ShopScreen() {
   const fetchProducts = useCallback(async (pageNum: number, isRefresh = false) => {
     if (loadingRef.current && !isRefresh) return;
     loadingRef.current = true;
-    setIsLoading(true);
+    if (products.length === 0 || isRefresh) {
+      setIsLoading(true);
+    }
 
     try {
       const res = await axios.get(API_ROUTES.PRODUCTS, {
         params: { page: pageNum, pageSize: 20, search: searchQuery, category: selectedCategory, sortBy },
-        timeout: 6000,
+        timeout: 3000,
       });
 
       const rawData = res.data?.data;

@@ -42,7 +42,8 @@ LogBox.ignoreLogs([
   'Writing to `value` during component render',
 ]);
 
-SplashScreen.preventAutoHideAsync();
+// Automatically hide native splash screen immediately on app launch
+SplashScreen.hideAsync().catch(() => {});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,14 +66,16 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
+    SplashScreen.hideAsync().catch(() => {});
   }, [fontsLoaded]);
 
   useEffect(() => {
     // Request push notification permissions on app start
-    requestNotificationPermissions();
+    try {
+      requestNotificationPermissions();
+    } catch (e) {
+      console.warn('Error requesting permissions:', e);
+    }
 
     // Listen for live push notifications from backend via WebSockets
     try {
@@ -93,8 +96,6 @@ export default function RootLayout() {
     }
   }, []);
 
-  if (!fontsLoaded) return null;
-
   return (
     <SafeAreaProvider>
       <Provider store={store}>
@@ -105,11 +106,18 @@ export default function RootLayout() {
             <Stack
               screenOptions={{
                 headerShown: false,
+                animation: 'fade',
                 contentStyle: {
                   backgroundColor: colorScheme === 'dark' ? '#0F172A' : '#F8FAFC',
                 },
-              }}
-            />
+              }}>
+              <Stack.Screen name="index" options={{ animation: 'fade' }} />
+              <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="doctor/[id]" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="product/[id]" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="+not-found" options={{ animation: 'fade' }} />
+            </Stack>
           </ToastProvider>
         </QueryClientProvider>
       </Provider>

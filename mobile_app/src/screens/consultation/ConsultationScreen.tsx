@@ -31,12 +31,15 @@ export function ConsultationScreen() {
   const auth = useAppSelector((state) => state.auth);
   const { bookings } = useAppSelector((state) => state.booking);
 
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>(() => {
+    const cached = Storage.getItem<Doctor[]>('amrutam_cached_doctors');
+    return Array.isArray(cached) && cached.length > 0 ? cached : [];
+  });
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(() => doctors.length === 0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(() => doctors.length);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   const loadingRef = useRef(false);
@@ -67,7 +70,9 @@ export function ConsultationScreen() {
   const fetchDoctors = useCallback(async (pageNum: number, isRefresh = false) => {
     if (loadingRef.current && !isRefresh) return;
     loadingRef.current = true;
-    setIsLoading(true);
+    if (doctors.length === 0 || isRefresh) {
+      setIsLoading(true);
+    }
 
     try {
       const res = await axios.get(API_ROUTES.DOCTORS, {
@@ -79,7 +84,7 @@ export function ConsultationScreen() {
           minExperience: filters.minExperience,
           maxFee: filters.maxFee,
         },
-        timeout: 8000,
+        timeout: 3000,
       });
 
       const rawData = res.data?.data;
@@ -174,9 +179,9 @@ export function ConsultationScreen() {
     fetchDoctors(1, true);
   }, [fetchDoctors]);
 
-  const renderDoctorItem = useCallback(({ item }: { item: Doctor }) => {
+  const renderDoctorItem = useCallback(({ item, index }: { item: Doctor; index: number }) => {
     if (!item) return null;
-    return <DoctorCard doctor={item} />;
+    return <DoctorCard doctor={item} index={index} />;
   }, []);
 
   const keyExtractor = useCallback((item: Doctor, index: number) => {

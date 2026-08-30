@@ -146,11 +146,11 @@ export function OnboardingScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Brand Logo Header — Properly Proportioned & Fully Visible */}
-      <View className="items-center mt-4 mb-2">
+      {/* Brand Logo Header — Compact, Perfectly Proportioned & Fully Visible */}
+      <View className="items-center mt-4 mb-3">
         <Image
           source={require('@/assets/images/logo.png')}
-          style={{ width: 220, height: 95 }}
+          style={{ width: 200, height: 95 }}
           resizeMode="contain"
         />
       </View>
@@ -168,7 +168,7 @@ export function OnboardingScreen() {
           <View
             key={slide.id}
             style={{ width: SCREEN_WIDTH }}
-            className="flex-1 px-6 justify-start pt-8 items-center">
+            className="flex-1 px-6 justify-start pt-6 items-center">
             {/* Feature Icon Card — Neat 80x80 Box */}
             <View className="w-20 h-20 rounded-2xl bg-[#EAF2E8] justify-center items-center mb-3 border border-[#CDE0CB] shadow-sm">
               {slide.icon}
@@ -200,8 +200,8 @@ export function OnboardingScreen() {
               {slide.description}
             </Text>
 
-            {/* Slide Feature Highlights Card (Enlarged Fonts & Icons) */}
-            <View className="w-full bg-[#EAF2E8]/80 border border-[#CDE0CB] rounded-2xl p-4 mt-6 flex-row justify-around items-center shadow-sm">
+            {/* Slide Feature Highlights Card — Perfectly Balanced Spacing */}
+            <View className="w-full bg-[#EAF2E8]/80 border border-[#CDE0CB] rounded-2xl p-3.5 mt-24 mb-2 flex-row justify-around items-center shadow-sm">
               {slide.highlights.map((h, i) => (
                 <React.Fragment key={i}>
                   <View className="items-center px-1 flex-1">
@@ -244,11 +244,10 @@ export function OnboardingScreen() {
           {ONBOARDING_SLIDES.map((_, idx) => (
             <View
               key={idx}
-              className={`rounded-full transition-all ${
-                idx === activeStep
-                  ? 'w-8 h-2 bg-[#3A643B]'
-                  : 'w-2 h-2 bg-[#CBD5E1]'
-              }`}
+              className={`rounded-full transition-all ${idx === activeStep
+                ? 'w-8 h-2 bg-[#3A643B]'
+                : 'w-2 h-2 bg-[#CBD5E1]'
+                }`}
             />
           ))}
         </View>

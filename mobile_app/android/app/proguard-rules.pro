@@ -11,4 +11,10 @@
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
 
-# Add any project specific keep options here:
+# react-native-mmkv
+-keep class com.reactnativemmkv.** { *; }
+
+# OkHttp & Axios
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-keep class okhttp3.** { *; }
