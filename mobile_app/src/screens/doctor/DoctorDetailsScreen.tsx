@@ -120,6 +120,7 @@ export function DoctorDetailsScreen() {
 
     setIsSubmitting(true);
     const patient = auth.user;
+    const guestUniqueId = `usr_guest_${Date.now()}`;
 
     try {
       const res = await axios.post(
@@ -129,9 +130,9 @@ export function DoctorDetailsScreen() {
           slotId: selectedSlot.id,
           dateStr: selectedDate,
           slotTime: selectedSlot.time,
-          patientId: patient?.id || `usr_guest`,
+          patientId: patient?.id || guestUniqueId,
           patientName: patient?.name || 'Guest Patient',
-          patientEmail: patient?.email || 'patient@amrutam.com',
+          patientEmail: patient?.email || `guest_${Date.now()}@amrutam.com`,
           patientPhone: patient?.phone || '+91 9876543210',
         },
         { timeout: 5000 }

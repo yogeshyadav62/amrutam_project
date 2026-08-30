@@ -67,15 +67,27 @@ export const DoctorCard = memo<Props>(({ doctor, index = 0 }) => {
     // A booking is ONLY confirmed for the CURRENTLY authenticated user!
     if (!auth.isAuthenticated || !auth.user) return false;
 
-    const currentUserId = String(auth.user.id || '');
-    const bookingPatientId = String(b.patientId || '');
-    const patientEmail = (auth.user.email || '').toLowerCase().trim();
-    const bookingEmail = (b.patientEmail || '').toLowerCase().trim();
+    const userCleanId = String(auth.user.id || '').trim();
+    const bookingCleanId = String(b.patientId || '').trim();
+    const isIdMatch =
+      userCleanId !== '' &&
+      bookingCleanId !== '' &&
+      userCleanId !== 'usr_guest' &&
+      bookingCleanId !== 'usr_guest' &&
+      userCleanId === bookingCleanId;
 
-    return (
-      (currentUserId !== '' && currentUserId === bookingPatientId) ||
-      (patientEmail !== '' && bookingEmail !== '' && patientEmail === bookingEmail)
-    );
+    if (isIdMatch) return true;
+
+    const userCleanEmail = String(auth.user.email || '').toLowerCase().trim();
+    const bookingCleanEmail = String(b.patientEmail || '').toLowerCase().trim();
+    const isEmailMatch =
+      userCleanEmail !== '' &&
+      bookingCleanEmail !== '' &&
+      userCleanEmail !== 'patient@amrutam.com' &&
+      bookingCleanEmail !== 'patient@amrutam.com' &&
+      userCleanEmail === bookingCleanEmail;
+
+    return isEmailMatch;
   });
 
   const isBooked = Boolean(userBooking);
