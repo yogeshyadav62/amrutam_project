@@ -32,6 +32,7 @@ exports.getProducts = async (req, res) => {
     const startIndex = (page - 1) * pageSize;
 
     const data = await Product.find(query)
+      .select('id title subtitle price originalPrice rating reviewCount size imageUrl badge category isAvailable')
       .sort(sortOptions)
       .skip(startIndex)
       .limit(pageSize);

@@ -58,7 +58,7 @@ export function ShopScreen() {
     try {
       const res = await axios.get(API_ROUTES.PRODUCTS, {
         params: { page: pageNum, pageSize: 20, search: searchQuery, category: selectedCategory, sortBy },
-        timeout: 8000,
+        timeout: 15000,
       });
 
       const rawData = res.data?.data;

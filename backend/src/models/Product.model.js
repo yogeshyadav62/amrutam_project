@@ -20,4 +20,9 @@ const ProductSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+ProductSchema.index({ createdAt: -1 });
+ProductSchema.index({ price: 1 });
+ProductSchema.index({ price: -1 });
+ProductSchema.index({ rating: -1 });
+
 module.exports = mongoose.model('Product', ProductSchema);

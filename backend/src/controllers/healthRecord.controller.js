@@ -27,7 +27,7 @@ exports.getHealthRecords = async (req, res) => {
     const startIndex = (page - 1) * pageSize;
 
     const list = await HealthRecord.find(query)
-      .sort({ date: -1, createdAt: -1 })
+      .sort({ createdAt: -1 })
       .skip(startIndex)
       .limit(pageSize);
 

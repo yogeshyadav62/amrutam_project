@@ -80,7 +80,7 @@ export function HealthRecordsScreen() {
           type: selectedType,
           tag: selectedTag,
         },
-        timeout: 3000,
+        timeout: 15000,
       });
 
       const payload = res.data?.data;

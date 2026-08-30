@@ -84,7 +84,7 @@ export function ConsultationScreen() {
           minExperience: filters.minExperience,
           maxFee: filters.maxFee,
         },
-        timeout: 3000,
+        timeout: 15000,
       });
 
       const rawData = res.data?.data;

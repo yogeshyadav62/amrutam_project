@@ -17,4 +17,8 @@ const HealthRecordSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+HealthRecordSchema.index({ createdAt: -1 });
+HealthRecordSchema.index({ date: -1 });
+HealthRecordSchema.index({ type: 1 });
+
 module.exports = mongoose.model('HealthRecord', HealthRecordSchema);
