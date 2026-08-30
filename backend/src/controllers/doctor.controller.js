@@ -224,6 +224,8 @@ exports.getDoctorSlots = async (req, res) => {
   try {
     const doctorId = req.params.id;
     const dateStr = req.query.date || new Date().toISOString().split('T')[0];
+    const patientId = (req.query.patientId || req.query.userId || '').trim();
+    const patientEmail = (req.query.patientEmail || req.query.email || '').toLowerCase().trim();
 
     const isObjId = require('mongoose').Types.ObjectId.isValid(doctorId);
     const doctor = await Doctor.findOne({
@@ -238,20 +240,48 @@ exports.getDoctorSlots = async (req, res) => {
 
     const times = doctor && Array.isArray(doctor.availableSlots) ? doctor.availableSlots : [];
 
-    const existingBookings = await Booking.find({
+    // Fetch all confirmed bookings for this doctor on this date
+    const allBookingsOnDate = await Booking.find({
       doctorId: { $in: docIds },
       slotDate: dateStr,
       status: { $regex: /^confirmed$/i },
     });
-    const bookedSlotTimes = new Set(existingBookings.map((b) => (b.slotTime || '').trim()));
+
+    // Map of slotTime -> count of booked patients (Capacity limit = 50 patients per slot)
+    const slotPatientCounts = new Map();
+    // Set of slotTimes booked specifically by current user
+    const userBookedSlotTimes = new Set();
+
+    allBookingsOnDate.forEach((b) => {
+      const cleanTime = (b.slotTime || '').trim();
+      const currentCount = slotPatientCounts.get(cleanTime) || 0;
+      slotPatientCounts.set(cleanTime, currentCount + 1);
+
+      const isUserBooking =
+        (patientId && patientId !== 'usr_guest' && String(b.patientId) === patientId) ||
+        (patientEmail && patientEmail !== 'patient@amrutam.com' && b.patientEmail && b.patientEmail.toLowerCase().trim() === patientEmail);
+
+      if (isUserBooking) {
+        userBookedSlotTimes.add(cleanTime);
+      }
+    });
+
+    const MAX_SLOT_CAPACITY = 50;
 
     const slots = times.map((time, idx) => {
       const cleanTime = (time || '').trim();
+      const bookedCount = slotPatientCounts.get(cleanTime) || 0;
+      const isUserBooked = userBookedSlotTimes.has(cleanTime);
+      const isCapacityFull = bookedCount >= MAX_SLOT_CAPACITY;
+
       return {
         id: `${doctorId}_${dateStr}_${idx}`,
         time: cleanTime,
         date: dateStr,
-        isBooked: bookedSlotTimes.has(cleanTime),
+        isBooked: isUserBooked || isCapacityFull,
+        isFull: isCapacityFull,
+        bookedCount,
+        availableCapacity: Math.max(0, MAX_SLOT_CAPACITY - bookedCount),
         isExpired: false,
       };
     });

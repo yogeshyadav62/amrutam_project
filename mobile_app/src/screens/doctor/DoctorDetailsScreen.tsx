@@ -78,7 +78,14 @@ export function DoctorDetailsScreen() {
       setIsLoadingSlots(true);
 
       try {
-        const res = await axios.get(API_ROUTES.DOCTOR_SLOTS(id), { params: { date: selectedDate }, timeout: 5000 });
+        const res = await axios.get(API_ROUTES.DOCTOR_SLOTS(id), {
+          params: {
+            date: selectedDate,
+            patientId: auth.user?.id || '',
+            patientEmail: auth.user?.email || '',
+          },
+          timeout: 5000,
+        });
         if (isMounted && res.data?.data) {
           setSlots(Array.isArray(res.data.data) ? res.data.data : []);
         }
@@ -96,7 +103,7 @@ export function DoctorDetailsScreen() {
     return () => {
       isMounted = false;
     };
-  }, [id, selectedDate]);
+  }, [id, selectedDate, auth.user?.id, auth.user?.email]);
 
   const handleSelectSlot = useCallback((slot: Slot) => {
     setSelectedSlot(slot);
