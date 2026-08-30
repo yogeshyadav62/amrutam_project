@@ -11,19 +11,30 @@ exports.createBooking = async (req, res) => {
       return res.status(400).json({ success: false, error: 'SLOT_EXPIRED: Requested slot has expired.' });
     }
 
-    // Check for existing confirmed booking in MongoDB
+    const isObjId = require('mongoose').Types.ObjectId.isValid(doctorId);
+    const doctor = await Doctor.findOne({
+      $or: [{ id: doctorId }, ...(isObjId ? [{ _id: doctorId }] : [])],
+    });
+
+    const docIds = [doctorId];
+    if (doctor) {
+      if (doctor.id) docIds.push(String(doctor.id));
+      if (doctor._id) docIds.push(String(doctor._id));
+    }
+
+    const cleanSlotTime = (slotTime || '').trim();
+
+    // Check for existing confirmed booking in MongoDB across all doctor ID variants
     const doubleBooked = await Booking.findOne({
-      doctorId,
+      doctorId: { $in: docIds },
       slotDate: dateStr,
-      slotTime,
-      status: 'Confirmed',
+      slotTime: cleanSlotTime,
+      status: { $regex: /^confirmed$/i },
     });
 
     if (doubleBooked) {
-      return res.status(409).json({ success: false, error: 'DOUBLE_BOOKING: You already have a booking for this time slot.' });
+      return res.status(409).json({ success: false, error: `DOUBLE_BOOKING: This slot (${cleanSlotTime}) is already booked by another patient.` });
     }
-
-    const doctor = await Doctor.findOne({ id: doctorId });
 
     const booking = await Booking.create({
       id: `bk_${Date.now()}_${Math.floor(Math.random() * 1000)}`,

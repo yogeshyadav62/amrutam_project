@@ -229,22 +229,32 @@ exports.getDoctorSlots = async (req, res) => {
     const doctor = await Doctor.findOne({
       $or: [{ id: doctorId }, ...(isObjId ? [{ _id: doctorId }] : [])],
     });
+
+    const docIds = [doctorId];
+    if (doctor) {
+      if (doctor.id) docIds.push(String(doctor.id));
+      if (doctor._id) docIds.push(String(doctor._id));
+    }
+
     const times = doctor && Array.isArray(doctor.availableSlots) ? doctor.availableSlots : [];
 
     const existingBookings = await Booking.find({
-      $or: [{ doctorId }, ...(doctor ? [{ doctorId: doctor.id }] : [])],
+      doctorId: { $in: docIds },
       slotDate: dateStr,
-      status: 'Confirmed',
+      status: { $regex: /^confirmed$/i },
     });
-    const bookedSlotTimes = new Set(existingBookings.map((b) => b.slotTime));
+    const bookedSlotTimes = new Set(existingBookings.map((b) => (b.slotTime || '').trim()));
 
-    const slots = times.map((time, idx) => ({
-      id: `${doctorId}_${dateStr}_${idx}`,
-      time,
-      date: dateStr,
-      isBooked: bookedSlotTimes.has(time),
-      isExpired: false,
-    }));
+    const slots = times.map((time, idx) => {
+      const cleanTime = (time || '').trim();
+      return {
+        id: `${doctorId}_${dateStr}_${idx}`,
+        time: cleanTime,
+        date: dateStr,
+        isBooked: bookedSlotTimes.has(cleanTime),
+        isExpired: false,
+      };
+    });
 
     res.json({ success: true, data: slots });
   } catch (error) {
