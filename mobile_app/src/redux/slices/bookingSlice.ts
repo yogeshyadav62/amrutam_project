@@ -69,8 +69,10 @@ export const bookingSlice = createSlice({
       state.offlineQueue.push(newBooking);
       const existing = state.bookings.filter((b) => b.id !== newBooking.id);
       state.bookings = [newBooking, ...existing];
-      Storage.setItem(`amrutam_offline_queue_${newBooking.patientId}`, state.offlineQueue);
-      Storage.setItem(getStorageKey(newBooking.patientId), state.bookings);
+      if (newBooking.patientId) {
+        Storage.setItem(getStorageKey(newBooking.patientId), state.bookings);
+      }
+      Storage.setItem('amrutam_offline_booking_queue', state.offlineQueue);
     },
     updateBookingStatus: (state, action: PayloadAction<{ id: string; status: Booking['status'] }>) => {
       const b = state.bookings.find((item) => item.id === action.payload.id);

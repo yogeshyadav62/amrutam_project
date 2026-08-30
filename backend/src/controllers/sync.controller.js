@@ -11,11 +11,15 @@ exports.syncOfflineQueue = async (req, res) => {
     if (Array.isArray(pendingBookings) && pendingBookings.length > 0) {
       for (const item of pendingBookings) {
         const confirmed = await Booking.create({
-          id: `bk_synced_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          id: item.id || `bk_synced_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
           doctorId: item.doctorId,
           doctorName: item.doctorName || 'Ayurvedic Specialist',
           doctorSpecialty: item.doctorSpecialty || 'Kaya Chikitsa',
           doctorFee: item.doctorFee || 499,
+          patientId: item.patientId || 'usr_guest',
+          patientName: item.patientName || 'Guest Patient',
+          patientEmail: item.patientEmail || 'patient@amrutam.com',
+          patientPhone: item.patientPhone || '+91 9876543210',
           slotId: item.slotId || `slot_${Date.now()}`,
           slotTime: item.slotTime || '10:00 AM',
           slotDate: item.slotDate || new Date().toISOString().split('T')[0],

@@ -167,22 +167,26 @@ export function DoctorDetailsScreen() {
       }, 800);
     } catch {
       const offlineBooking: Booking = {
-        id: `offline_bk_${Date.now()}`,
-        doctorId: doctor.id,
+        id: `offline_bk_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        doctorId: doctor.id || (doctor as any)._id,
         doctorName: fullName,
         doctorSpecialty: doctor.specialty || 'General Medicine',
         doctorFee: doctor.consultationFee || 500,
+        patientId: patient?.id || guestUniqueId,
+        patientName: patient?.name || 'Guest Patient',
+        patientEmail: patient?.email || `guest_${Date.now()}@amrutam.com`,
+        patientPhone: patient?.phone || '+91 9876543210',
         slotId: selectedSlot.id,
         slotTime: selectedSlot.time,
         slotDate: selectedDate,
         createdAt: new Date().toISOString(),
-        status: 'Pending',
+        status: 'Confirmed',
         isOfflineQueued: true,
       };
 
       dispatch(addOfflineBooking(offlineBooking));
       setIsBookingSuccess(true);
-      showToast('Booking saved offline. Will auto-sync when online.', 'info');
+      showToast('Booking saved offline. Will auto-sync when online. 📶', 'info');
 
       // Trigger Native Push Notification on Device
       triggerBookingNotification(fullName, selectedDate, selectedSlot.time);

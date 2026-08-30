@@ -95,6 +95,10 @@ export function ProfileScreen() {
         dispatch(setBookings({ userId: auth.user.id, bookings: userList }));
       } catch (err) {
         console.warn('API fetch error for patient bookings:', err);
+        const local = Storage.getItem<Booking[]>(`amrutam_user_bookings_${auth.user.id}`, []);
+        if (Array.isArray(local) && local.length > 0) {
+          dispatch(setBookings({ userId: auth.user.id, bookings: local }));
+        }
       } finally {
         setIsLoadingBookings(false);
       }
