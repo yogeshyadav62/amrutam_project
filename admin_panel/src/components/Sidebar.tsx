@@ -117,7 +117,7 @@ export const Sidebar: React.FC<Props> = ({ user, activeTab, subView, onNavigate,
     },
   ];
 
-  const navItems = isSuperAdmin ? superAdminNavItems : doctorNavItems;
+  const navItems: NavItem[] = isSuperAdmin ? superAdminNavItems : doctorNavItems;
   const isDark = theme === 'dark';
 
   return (
@@ -141,7 +141,7 @@ export const Sidebar: React.FC<Props> = ({ user, activeTab, subView, onNavigate,
 
         {/* Navigation Links */}
         <nav className="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-160px)]">
-          {navItems.map((item) => {
+          {navItems.map((item: NavItem) => {
             const Icon = item.icon;
             const isTabActive = activeTab === item.id;
             const isOpen = !!openDropdowns[item.id];
@@ -176,7 +176,7 @@ export const Sidebar: React.FC<Props> = ({ user, activeTab, subView, onNavigate,
 
                   {isOpen && (
                     <div className={`pl-6 space-y-1 my-1 border-l-2 ml-5 animate-in fade-in duration-200 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                      {item.subItems.map((sub) => {
+                      {item.subItems.map((sub: NavSubItem) => {
                         const SubIcon = sub.icon;
                         const isSubActive = isTabActive && subView === sub.subView;
                         return (
