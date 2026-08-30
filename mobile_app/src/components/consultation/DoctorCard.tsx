@@ -59,35 +59,26 @@ export const DoctorCard = memo<Props>(({ doctor, index = 0 }) => {
     const bookingDocIdStr = String(b.doctorId || '');
     const docIdMatch =
       docIdStr === bookingDocIdStr ||
-      (doctor.id && b.doctorId === doctor.id) ||
-      ((doctor as any)._id && b.doctorId === (doctor as any)._id);
+      (doctor.id && String(b.doctorId) === String(doctor.id)) ||
+      ((doctor as any)._id && String(b.doctorId) === String((doctor as any)._id));
 
     if (!docIdMatch) return false;
 
-    // A booking is ONLY confirmed for the CURRENTLY authenticated user!
-    if (!auth.isAuthenticated || !auth.user) return false;
+    if (auth.isAuthenticated && auth.user) {
+      const userCleanId = String(auth.user.id || '').trim();
+      const bookingCleanId = String(b.patientId || '').trim();
+      const isIdMatch = userCleanId !== '' && bookingCleanId !== '' && userCleanId === bookingCleanId;
+      if (isIdMatch) return true;
 
-    const userCleanId = String(auth.user.id || '').trim();
-    const bookingCleanId = String(b.patientId || '').trim();
-    const isIdMatch =
-      userCleanId !== '' &&
-      bookingCleanId !== '' &&
-      userCleanId !== 'usr_guest' &&
-      bookingCleanId !== 'usr_guest' &&
-      userCleanId === bookingCleanId;
+      const userCleanEmail = String(auth.user.email || '').toLowerCase().trim();
+      const bookingCleanEmail = String(b.patientEmail || '').toLowerCase().trim();
+      const isEmailMatch = userCleanEmail !== '' && bookingCleanEmail !== '' && userCleanEmail === bookingCleanEmail;
+      if (isEmailMatch) return true;
+    }
 
-    if (isIdMatch) return true;
-
-    const userCleanEmail = String(auth.user.email || '').toLowerCase().trim();
-    const bookingCleanEmail = String(b.patientEmail || '').toLowerCase().trim();
-    const isEmailMatch =
-      userCleanEmail !== '' &&
-      bookingCleanEmail !== '' &&
-      userCleanEmail !== 'patient@amrutam.com' &&
-      bookingCleanEmail !== 'patient@amrutam.com' &&
-      userCleanEmail === bookingCleanEmail;
-
-    return isEmailMatch;
+    // Guest matching: match guest booking IDs
+    const bookingPatientId = String(b.patientId || '');
+    return bookingPatientId.startsWith('usr_guest');
   });
 
   const isBooked = Boolean(userBooking);

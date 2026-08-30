@@ -52,17 +52,45 @@ export const bookingSlice = createSlice({
   reducers: {
     setBookings: (state, action: PayloadAction<{ userId?: string; bookings: Booking[] }>) => {
       const { userId, bookings } = action.payload;
-      const userBookings = userId
-        ? bookings.filter((b) => b.patientId === userId)
-        : bookings;
-      state.bookings = userBookings;
-      Storage.setItem(getStorageKey(userId), userBookings);
+      const map = new Map<string, Booking>();
+
+      // Preserve existing local bookings first so newly booked slots are NEVER wiped
+      state.bookings.forEach((b) => {
+        if (b && (b.id || (b as any)._id)) {
+          const key = String(b.id || (b as any)._id);
+          map.set(key, b);
+        }
+      });
+
+      // Merge incoming API bookings
+      (bookings || []).forEach((b) => {
+        if (b && (b.id || (b as any)._id)) {
+          const key = String(b.id || (b as any)._id);
+          map.set(key, b);
+        }
+      });
+
+      const merged = Array.from(map.values());
+      const filtered = userId
+        ? merged.filter(
+            (b) =>
+              String(b.patientId) === String(userId) ||
+              (userId === 'usr_guest' && b.patientId === 'usr_guest')
+          )
+        : merged;
+
+      state.bookings = filtered;
+      if (userId) {
+        Storage.setItem(getStorageKey(userId), filtered);
+      }
     },
     addBooking: (state, action: PayloadAction<Booking>) => {
       const newBooking = action.payload;
       const existing = state.bookings.filter((b) => b.id !== newBooking.id);
       state.bookings = [newBooking, ...existing];
-      Storage.setItem(getStorageKey(newBooking.patientId), state.bookings);
+      if (newBooking.patientId) {
+        Storage.setItem(getStorageKey(newBooking.patientId), state.bookings);
+      }
     },
     addOfflineBooking: (state, action: PayloadAction<Booking>) => {
       const newBooking = action.payload;
