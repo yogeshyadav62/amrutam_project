@@ -42,8 +42,10 @@ export function ProductDetailsScreen() {
   // Load initial product from MMKV local storage cache if available
   const [product, setProduct] = useState<Product | null>(() => {
     if (!id) return null;
-    const cached = Storage.getItem<Product[]>(STORAGE_KEY_PRODUCTS, []) || [];
-    return cached.find((p) => p.id === id || (p as any)._id === id) || null;
+    const cached1 = Storage.getItem<Product[]>('amrutam_cached_products', []) || [];
+    const cached2 = Storage.getItem<Product[]>('amrutam_persistent_products', []) || [];
+    const allCached = [...cached1, ...cached2];
+    return allCached.find((p) => String(p.id) === String(id) || String((p as any)._id) === String(id)) || null;
   });
 
   const [isLoading, setIsLoading] = useState(!product);
@@ -64,9 +66,11 @@ export function ProductDetailsScreen() {
         }
       } catch (err) {
         console.warn('API fetch error for Product details (using offline cache):', err);
-        if (isMounted && !product) {
-          const cached = Storage.getItem<Product[]>('amrutam_persistent_products', []) || [];
-          const found = cached.find((p) => String(p.id) === String(id) || String((p as any)._id) === String(id));
+        if (isMounted) {
+          const cached1 = Storage.getItem<Product[]>('amrutam_cached_products', []) || [];
+          const cached2 = Storage.getItem<Product[]>('amrutam_persistent_products', []) || [];
+          const allCached = [...cached1, ...cached2];
+          const found = allCached.find((p) => String(p.id) === String(id) || String((p as any)._id) === String(id));
           if (found) setProduct(found);
         }
       } finally {
