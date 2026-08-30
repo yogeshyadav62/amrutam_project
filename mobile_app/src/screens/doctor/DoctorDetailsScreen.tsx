@@ -331,17 +331,14 @@ export function DoctorDetailsScreen() {
         </View>
 
         <View className={`border rounded-3xl p-5 mb-6 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
-          {isLoadingSlots ? (
-            <ActivityIndicator size="small" color="#10B981" />
-          ) : (
-            <>
-              <SlotPicker
-                slots={slots}
-                selectedSlotId={selectedSlot?.id || null}
-                onSelectSlot={handleSelectSlot}
-              />
+          <SlotPicker
+            slots={slots}
+            selectedSlotId={selectedSlot?.id || null}
+            onSelectSlot={handleSelectSlot}
+            isLoading={isLoadingSlots}
+          />
 
-              {selectedSlot && (
+          {selectedSlot && (
                 <View className="mt-3 pt-3 border-t border-slate-700/30 flex-row items-center justify-between">
                   <Text className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                     {isSlotBooked ? 'Selected Slot:' : 'Selected Time Slot:'}
@@ -361,8 +358,6 @@ export function DoctorDetailsScreen() {
                   </View>
                 </View>
               )}
-            </>
-          )}
         </View>
       </ScrollView>
 

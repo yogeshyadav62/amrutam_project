@@ -192,13 +192,25 @@ export function ShopScreen() {
   }, [isLoading, page, isDark]);
 
   const renderFooter = useCallback(() => {
-    if (!isLoading || page === 1 || !hasMore || products.length === 0) return null;
+    if (!hasMore && products.length > 0) {
+      return (
+        <View className="py-6 items-center border-t border-slate-200/30 mt-4">
+          <Text className={`text-[11px] font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            🌿 All Ayurvedic Formulations loaded
+          </Text>
+        </View>
+      );
+    }
+    if (!hasMore) return null;
     return (
-      <View className="py-6 items-center">
+      <View className="py-6 flex-row items-center justify-center gap-2">
         <ActivityIndicator size="small" color="#10B981" />
+        <Text className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+          Loading more Ayurvedic Products from Server...
+        </Text>
       </View>
     );
-  }, [isLoading, page, hasMore, products.length]);
+  }, [hasMore, products.length, isDark]);
 
   return (
     <View className={`flex-1 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`} style={{ paddingTop: insets.top }}>

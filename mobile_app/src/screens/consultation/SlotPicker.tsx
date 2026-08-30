@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View, Pressable, StyleSheet } from 'react-native';
+import { Text, View, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { Slot } from '@/utils/APiCalls';
 import { Clock, Sun, Moon, Check, Sparkles } from 'lucide-react-native';
 import { useTheme } from '@/redux/hooks';
@@ -8,9 +8,10 @@ interface Props {
   slots: Slot[];
   selectedSlotId: string | null;
   onSelectSlot: (slot: Slot) => void;
+  isLoading?: boolean;
 }
 
-export function SlotPicker({ slots, selectedSlotId, onSelectSlot }: Props) {
+export function SlotPicker({ slots, selectedSlotId, onSelectSlot, isLoading = false }: Props) {
   const { isDark } = useTheme();
 
   const safeSlots = Array.isArray(slots) ? slots : [];
@@ -134,7 +135,14 @@ export function SlotPicker({ slots, selectedSlotId, onSelectSlot }: Props) {
         </View>
       </View>
 
-      {safeSlots.length === 0 ? (
+      {isLoading ? (
+        <View className="py-6 items-center justify-center flex-row gap-2.5 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 mb-3">
+          <ActivityIndicator size="small" color="#10B981" />
+          <Text className={`text-xs font-black ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+            Fetching Live Vaidya Slots...
+          </Text>
+        </View>
+      ) : safeSlots.length === 0 ? (
         <View className="py-4 items-center justify-center">
           <Text className={`text-xs font-medium italic ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             No consultation slots configured for this doctor today.
