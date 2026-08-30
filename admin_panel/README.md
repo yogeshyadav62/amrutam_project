@@ -1,32 +1,38 @@
-# React + TypeScript + Vite
+# 💻 Amrutam Admin Panel Web Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+> Ultra-fast Web Dashboard built with Vite, React 18, and Tailwind CSS for managing Doctors, Formulations, Patient Bookings, and Live WebSockets.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠️ Tech Stack
+- **Build Tool**: Vite
+- **UI Framework**: React 18
+- **Styling**: Tailwind CSS & Lucide Icons
+- **Real-Time Channel**: Socket.io-client
+- **Live Deployment**: Vercel (`https://amrutam-project.vercel.app/#dashboard`)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Running Locally
 
-## Expanding the Oxlint configuration
+```bash
+# Navigate to admin panel directory
+cd admin_panel
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+# Install dependencies
+npm install
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+# Start Vite dev server
+npm run dev
 ```
+*Open `http://localhost:5173/#dashboard` in browser.*
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+---
+
+## 📊 Dashboard Modules
+
+1. 📈 **Analytics Overview**: Real-time stats cards for Total Revenue, Total Doctors, Total Formulations, and Active Appointments.
+2. 🩺 **Doctor Management**: Add, edit, or toggle doctor consultation availability.
+3. 🌿 **Formulations Store**: Manage Ayurvedic products, pricing, badges, and stock levels.
+4. 📋 **Bookings Ledger**: Real-time view of all patient appointments across all slots.
+5. ⚡ **WebSockets Live Sync**: Modifications automatically broadcast `products_updated` and `doctors_updated` events to all active mobile clients.
