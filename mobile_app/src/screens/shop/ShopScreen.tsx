@@ -46,6 +46,7 @@ export function ShopScreen() {
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
   const loadingRef = useRef(false);
+  const pageRef = useRef(1);
 
   const fetchProducts = useCallback(async (pageNum: number, isRefresh = false) => {
     if (loadingRef.current && !isRefresh) return;
@@ -57,7 +58,7 @@ export function ShopScreen() {
     try {
       const res = await axios.get(API_ROUTES.PRODUCTS, {
         params: { page: pageNum, pageSize: 20, search: searchQuery, category: selectedCategory, sortBy },
-        timeout: 3000,
+        timeout: 8000,
       });
 
       const rawData = res.data?.data;
@@ -68,10 +69,12 @@ export function ShopScreen() {
         : [];
 
       const total = rawData?.totalCount !== undefined ? rawData.totalCount : list.length;
-      const more = rawData?.hasMore !== undefined ? rawData.hasMore : false;
+      const more = rawData?.hasMore !== undefined ? rawData.hasMore : list.length >= 20;
 
       setTotalCount(total);
       setHasMore(more);
+      pageRef.current = pageNum;
+      setPage(pageNum);
 
       if (isRefresh || pageNum === 1) {
         setProducts(list);
@@ -119,6 +122,7 @@ export function ShopScreen() {
   }, [searchQuery, selectedCategory, sortBy]);
 
   useEffect(() => {
+    pageRef.current = 1;
     setPage(1);
     fetchProducts(1, true);
   }, [searchQuery, selectedCategory, sortBy]);
@@ -131,6 +135,7 @@ export function ShopScreen() {
 
       socket.on('products_updated', () => {
         console.log('⚡ Products list updated live from Admin Panel via WebSockets');
+        pageRef.current = 1;
         setPage(1);
         fetchProducts(1, true);
       });
@@ -145,11 +150,10 @@ export function ShopScreen() {
 
   const handleLoadMore = useCallback(() => {
     if (!loadingRef.current && hasMore) {
-      const nextPage = page + 1;
-      setPage(nextPage);
+      const nextPage = pageRef.current + 1;
       fetchProducts(nextPage);
     }
-  }, [hasMore, page, fetchProducts]);
+  }, [hasMore, fetchProducts]);
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
