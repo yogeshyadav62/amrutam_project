@@ -654,6 +654,34 @@ export function ProfileScreen() {
                 <ChevronRight size={18} color="#94A3B8" />
               </TouchableOpacity>
 
+              {/* Wipe All Offline Local MMKV Cache Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  Storage.clear();
+                  dispatch(logout());
+                  dispatch(resetBookings());
+                  dispatch(clearCart());
+                  showToast('All Offline Local Storage Cleared Successfully! 🧹', 'success');
+                }}
+                className={`flex-row items-center justify-between p-3.5 rounded-2xl mb-2 border ${
+                  isDark ? 'bg-red-950/40 border-red-800/60' : 'bg-red-50 border-red-200'
+                }`}>
+                <View className="flex-row items-center gap-3">
+                  <View className="w-9 h-9 rounded-xl bg-red-500/20 items-center justify-center">
+                    <Trash2 size={18} color="#EF4444" />
+                  </View>
+                  <View>
+                    <Text className={`text-sm font-extrabold ${isDark ? 'text-red-300' : 'text-red-900'}`}>
+                      Wipe All Offline App Cache
+                    </Text>
+                    <Text className={`text-[10px] font-semibold ${isDark ? 'text-red-400/80' : 'text-red-600'}`}>
+                      1-Tap clear all MMKV local storage & reset state
+                    </Text>
+                  </View>
+                </View>
+                <ChevronRight size={18} color="#EF4444" />
+              </TouchableOpacity>
+
               {/* Reset & Launch Onboarding Tutorial Button */}
               <TouchableOpacity
                 onPress={() => {
