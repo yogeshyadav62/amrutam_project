@@ -3,12 +3,13 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
+dotenv.config();
 
 const Doctor = require('../models/Doctor.model');
 const Product = require('../models/Product.model');
 const HealthRecord = require('../models/HealthRecord.model');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/amrutam_db';
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/amrutam_db';
 
 // First names, last names, cities & hospitals for generating 500 Doctors
 const firstNames = [
@@ -229,7 +230,7 @@ async function seed500Database() {
       const month = months[i % months.length];
       const year = years[i % years.length];
       const day = 1 + (i % 28);
-      const date = `${month} ${day < 10 ? '0' + day : day}`, ${year}`;
+      const dateStr = `${month} ${day < 10 ? '0' + day : day}, ${year}`;
       const monthYear = `${month} ${year}`;
 
       healthRecords.push({
@@ -238,7 +239,7 @@ async function seed500Database() {
         type,
         doctorName: doctor.name,
         facility,
-        date,
+        date: dateStr,
         monthYear,
         tags: [type, doctor.specialty.split(' ')[0], 'Verified Record', 'Digital Vault'],
         summary: `Detailed ${type.toLowerCase()} issued by ${doctor.name} at ${facility}. Complete vital diagnostics and recommendations attached.`,

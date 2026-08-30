@@ -13,8 +13,23 @@ import {
   PlusCircle,
   LogOut,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { NAV_ROUTES } from '../utils/Routes';
 import type { AuthUser } from '../types';
+
+export interface NavSubItem {
+  label: string;
+  subView: 'manage' | 'add';
+  icon: LucideIcon;
+}
+
+export interface NavItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  isDropdown: boolean;
+  subItems?: NavSubItem[];
+}
 
 interface Props {
   user: AuthUser;
@@ -40,7 +55,7 @@ export const Sidebar: React.FC<Props> = ({ user, activeTab, subView, onNavigate,
 
   const isSuperAdmin = user.role === 'super_admin';
 
-  const superAdminNavItems = [
+  const superAdminNavItems: NavItem[] = [
     {
       id: NAV_ROUTES.DASHBOARD,
       label: 'Dashboard',
@@ -87,7 +102,7 @@ export const Sidebar: React.FC<Props> = ({ user, activeTab, subView, onNavigate,
     },
   ];
 
-  const doctorNavItems = [
+  const doctorNavItems: NavItem[] = [
     {
       id: NAV_ROUTES.DASHBOARD,
       label: 'Doctor Portal',

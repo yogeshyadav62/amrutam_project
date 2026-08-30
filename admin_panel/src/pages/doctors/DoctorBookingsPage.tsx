@@ -4,8 +4,6 @@ import axios from 'axios';
 import {
   CalendarCheck,
   Search,
-  CheckCircle,
-  XCircle,
   Clock,
   UserCheck,
   Phone,

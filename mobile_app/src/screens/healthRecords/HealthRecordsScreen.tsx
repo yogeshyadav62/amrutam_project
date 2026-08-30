@@ -41,14 +41,43 @@ export function HealthRecordsScreen() {
     return groupedRecords.reduce((acc, g) => acc + (g.data?.length || 0), 0);
   });
   const [selectedRecordForPreview, setSelectedRecordForPreview] = useState<HealthRecord | null>(null);
+  const loadingRef = React.useRef(false);
+
+  const mergeGroupedRecords = (
+    existing: GroupedHealthRecords[],
+    incoming: GroupedHealthRecords[]
+  ): GroupedHealthRecords[] => {
+    const groupMap = new Map<string, GroupedHealthRecords>();
+    existing.forEach((g) => {
+      groupMap.set(g.title, { ...g, data: [...g.data] });
+    });
+    incoming.forEach((g) => {
+      if (groupMap.has(g.title)) {
+        const current = groupMap.get(g.title)!;
+        const existingIds = new Set(current.data.map((r) => r.id));
+        const newItems = g.data.filter((r) => !existingIds.has(r.id));
+        current.data = [...current.data, ...newItems];
+      } else {
+        groupMap.set(g.title, { ...g, data: [...g.data] });
+      }
+    });
+    return Array.from(groupMap.values());
+  };
 
   const fetchHealthRecords = async (pageNum: number, isRefresh = false) => {
-    if (isLoading && !isRefresh) return;
+    if (loadingRef.current && !isRefresh) return;
+    loadingRef.current = true;
     setIsLoading(true);
 
     try {
       const res = await axios.get(API_ROUTES.HEALTH_RECORDS, {
-        params: { page: pageNum, pageSize: 50, type: selectedType, tag: selectedTag },
+        params: {
+          page: pageNum,
+          pageSize: 15,
+          search: searchQuery,
+          type: selectedType,
+          tag: selectedTag,
+        },
         timeout: 6000,
       });
 
@@ -57,16 +86,23 @@ export function HealthRecordsScreen() {
         const groupsList: GroupedHealthRecords[] = payload.groups;
         setTotalCount(payload.totalCount || 0);
         setHasMore(payload.hasMore || false);
-        setGroupedRecords(groupsList);
+        setPage(pageNum);
 
-        if (groupsList.length > 0) {
-          // Persist fresh backend health timeline to MMKV local storage
-          Storage.setItem(STORAGE_KEY_HEALTH, groupsList);
+        if (isRefresh || pageNum === 1) {
+          setGroupedRecords(groupsList);
+          if (groupsList.length > 0) {
+            Storage.setItem(STORAGE_KEY_HEALTH, groupsList);
+          }
+        } else {
+          setGroupedRecords((prev) => {
+            const merged = mergeGroupedRecords(prev, groupsList);
+            Storage.setItem(STORAGE_KEY_HEALTH, merged);
+            return merged;
+          });
         }
       }
     } catch (err) {
       console.warn('API fetch warning in HealthRecordsScreen (loading offline MMKV cache):', err);
-      // Net off / Error: load from MMKV local storage
       const cached = Storage.getItem<GroupedHealthRecords[]>(STORAGE_KEY_HEALTH, []);
       if (cached && cached.length > 0) {
         setGroupedRecords(cached);
@@ -78,6 +114,7 @@ export function HealthRecordsScreen() {
         setTotalCount(0);
       }
     } finally {
+      loadingRef.current = false;
       setIsLoading(false);
     }
   };
@@ -88,9 +125,8 @@ export function HealthRecordsScreen() {
   }, [searchQuery, selectedType, selectedTag]);
 
   const handleLoadMore = () => {
-    if (!isLoading && hasMore) {
+    if (!loadingRef.current && hasMore) {
       const nextPage = page + 1;
-      setPage(nextPage);
       fetchHealthRecords(nextPage);
     }
   };
