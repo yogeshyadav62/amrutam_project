@@ -91,20 +91,11 @@ export const bookingSlice = createSlice({
       })
       .addCase(fetchBookingsThunk.fulfilled, (state, action) => {
         state.isLoading = false;
-        const apiBookings = action.payload || [];
-        const map = new Map<string, Booking>();
-        // Preserve existing local bookings first
-        state.bookings.forEach((b) => {
-          if (b && b.id) map.set(b.id, b);
-        });
-        // Merge API bookings
-        apiBookings.forEach((b) => {
-          if (b && b.id) map.set(b.id, b);
-        });
-        const merged = Array.from(map.values());
-        state.bookings = merged;
-        if (action.meta.arg) {
-          Storage.setItem(getStorageKey(action.meta.arg), merged);
+        const currentUserId = action.meta.arg;
+        const userBookings = (action.payload || []).filter((b) => b && String(b.patientId) === String(currentUserId));
+        state.bookings = userBookings;
+        if (currentUserId) {
+          Storage.setItem(getStorageKey(currentUserId), userBookings);
         }
       })
       .addCase(fetchBookingsThunk.rejected, (state, action) => {

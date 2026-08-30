@@ -53,7 +53,7 @@ export const DoctorCard = memo<Props>(({ doctor, index = 0 }) => {
     .toUpperCase() || 'AV';
 
   const userBooking = bookings.find((b) => {
-    if (b.status === 'Cancelled') return false;
+    if (!b || b.status === 'Cancelled') return false;
 
     const docIdStr = String(doctor.id || (doctor as any)._id || '');
     const bookingDocIdStr = String(b.doctorId || '');
@@ -64,15 +64,17 @@ export const DoctorCard = memo<Props>(({ doctor, index = 0 }) => {
 
     if (!docIdMatch) return false;
 
-    if (!auth.isAuthenticated) return true;
+    // A booking is ONLY confirmed for the CURRENTLY authenticated user!
+    if (!auth.isAuthenticated || !auth.user) return false;
 
-    const currentUserId = String(auth.user?.id || '');
+    const currentUserId = String(auth.user.id || '');
     const bookingPatientId = String(b.patientId || '');
-    const patientEmail = auth.user?.email || '';
+    const patientEmail = (auth.user.email || '').toLowerCase().trim();
+    const bookingEmail = (b.patientEmail || '').toLowerCase().trim();
 
     return (
-      currentUserId === bookingPatientId ||
-      (patientEmail !== '' && b.patientEmail === patientEmail)
+      (currentUserId !== '' && currentUserId === bookingPatientId) ||
+      (patientEmail !== '' && bookingEmail !== '' && patientEmail === bookingEmail)
     );
   });
 
